@@ -8,12 +8,15 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
+import io.harness.cdng.creator.plan.gitops.ClusterPlanCreator;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
+import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
+import io.harness.cdng.environment.helper.EnvironmentPlanCreatorConfigMapper;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -23,7 +26,9 @@ import io.harness.cdng.pipeline.steps.DeploymentStageStep;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
+import io.harness.ng.core.environment.beans.Environment;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.entity.InfrastructureEntity;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.services.ServiceEntityService;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
@@ -48,6 +53,7 @@ import io.harness.pms.yaml.YamlField;
 import io.harness.pms.yaml.YamlNode;
 import io.harness.pms.yaml.YamlUtils;
 import io.harness.serializer.KryoSerializer;
+import io.harness.utils.YamlPipelineUtils;
 import io.harness.when.utils.RunInfoUtils;
 import io.harness.yaml.core.failurestrategy.FailureStrategyConfig;
 
@@ -163,6 +169,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
 
       PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
       addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure);
+      addGitopsClustersDependency(planCreationResponseMap, stageNode.getDeploymentStageConfig().getEnvironmentGroup(),
+          stageNode.getDeploymentStageConfig().getEnvironment());
 
       // Add dependency for execution
       YamlField executionField = specField.getNode().getField(YAMLFieldNameConstants.EXECUTION);
@@ -175,6 +183,17 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     } catch (IOException e) {
       throw new InvalidRequestException(
           "Invalid yaml for Deployment stage with identifier - " + stageNode.getIdentifier(), e);
+    }
+  }
+
+  private void addGitopsClustersDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
+      EnvironmentGroupYaml envGroupYaml, EnvironmentYamlV2 envV2) {
+    if (envGroupYaml != null) {
+      PlanNode gitopsNode = ClusterPlanCreator.getGitopsClustersStepPlanNode(envGroupYaml);
+      planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
+    } else if (envV2 != null) {
+      PlanNode gitopsNode = ClusterPlanCreator.getGitopsClustersStepPlanNode(envV2);
+      planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     }
   }
 
