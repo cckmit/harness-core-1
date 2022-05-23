@@ -61,21 +61,20 @@ public class ClusterPlanCreator {
         .build();
   }
 
-  private static ClusterStepParameters getStepParams(EnvironmentYamlV2 environmentYamlV2) {
+  private ClusterStepParameters getStepParams(EnvironmentYamlV2 environmentYamlV2) {
     checkNotNull(environmentYamlV2, "environment must be present");
 
     final String envRef = fetchEnvRef(environmentYamlV2);
-
     if (environmentYamlV2.getDeployToAll() == Boolean.TRUE) {
       return ClusterStepParameters.WithEnv(envRef);
     }
-
     checkArgument(isNotEmpty(environmentYamlV2.getGitOpsClusters()),
         "list of gitops clusterRefs must be provided when not deploying to all clusters");
+
     return ClusterStepParameters.WithEnvAndClusterRefs(envRef, getClusterRefs(environmentYamlV2));
   }
 
-  private static ClusterStepParameters getStepParams(EnvironmentGroupYaml envGroupYaml) {
+  private ClusterStepParameters getStepParams(EnvironmentGroupYaml envGroupYaml) {
     checkNotNull(envGroupYaml, "envGroupYaml must be present");
 
     final ParameterField<String> envGroupRef = envGroupYaml.getEnvGroupRef();
@@ -100,7 +99,7 @@ public class ClusterPlanCreator {
     return parameters;
   }
 
-  private static Set<String> getClusterRefs(EnvironmentYamlV2 environmentYamlV2) {
+  private Set<String> getClusterRefs(EnvironmentYamlV2 environmentYamlV2) {
     final Set<String> clusterRefs = new HashSet<>();
     for (ClusterYaml cluster : environmentYamlV2.getGitOpsClusters()) {
       checkArgument(!cluster.getRef().isExpression(),
@@ -110,11 +109,10 @@ public class ClusterPlanCreator {
     return clusterRefs;
   }
 
-  private static String fetchEnvRef(EnvironmentYamlV2 environmentYamlV2) {
+  private String fetchEnvRef(EnvironmentYamlV2 environmentYamlV2) {
     final ParameterField<String> environmentRef = environmentYamlV2.getEnvironmentRef();
     checkNotNull(environmentRef, "environment ref must be present");
     checkArgument(!environmentRef.isExpression(), "environment ref not resolved yet");
-
     return (String) environmentRef.fetchFinalValue();
   }
 }
