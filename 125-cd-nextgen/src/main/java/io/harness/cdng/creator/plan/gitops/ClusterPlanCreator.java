@@ -1,8 +1,9 @@
 package io.harness.cdng.creator.plan.gitops;
 
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
+
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 import static java.lang.String.format;
 import static java.util.function.Function.identity;
 
@@ -46,7 +47,7 @@ public class ClusterPlanCreator {
   }
 
   @NotNull
-  public static PlanNode getGitopsClustersStepPlanNode(final EnvironmentGroupYaml envGroupYaml) {
+  public PlanNode getGitopsClustersStepPlanNode(final EnvironmentGroupYaml envGroupYaml) {
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
         .name(PlanCreatorConstants.GITOPS_INFRA_NODE_NAME)
