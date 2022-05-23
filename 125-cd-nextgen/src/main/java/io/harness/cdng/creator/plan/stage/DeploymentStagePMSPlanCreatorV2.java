@@ -8,6 +8,8 @@
 package io.harness.cdng.creator.plan.stage;
 
 import static io.harness.annotations.dev.HarnessTeam.CDC;
+import static io.harness.data.structure.EmptyPredicate.isEmpty;
+import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
@@ -22,12 +24,17 @@ import io.harness.cdng.pipeline.PipelineInfrastructure;
 import io.harness.cdng.pipeline.beans.DeploymentStageStepParameters;
 import io.harness.cdng.pipeline.steps.CdStepParametersUtils;
 import io.harness.cdng.pipeline.steps.DeploymentStageStep;
+import io.harness.cdng.service.beans.ServiceYamlV2;
 import io.harness.cdng.visitor.YamlTypes;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
+import io.harness.ng.core.service.entity.ServiceEntity;
+import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
+import io.harness.ng.core.service.yaml.NGServiceConfig;
+import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -163,10 +170,18 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       // Spec node is also added in this method
       addServiceDependency(planCreationResponseMap, specField, stageNode, ctx);
 
+      final Optional<NGServiceV2InfoConfig> ngServiceConfig =
+          fetchServiceConfig(ctx, stageNode.getDeploymentStageConfig().getService())
+              .map(NGServiceConfig::getNgServiceV2InfoConfig);
       PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
       addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure);
-      addGitopsClustersDependency(planCreationResponseMap, stageNode.getDeploymentStageConfig().getEnvironmentGroup(),
-          stageNode.getDeploymentStageConfig().getEnvironment());
+      ngServiceConfig.map(NGServiceV2InfoConfig::isGitOpsEnabled).ifPresent(ge -> {
+        if (ge) {
+          addGitopsClustersDependency(planCreationResponseMap,
+              stageNode.getDeploymentStageConfig().getEnvironmentGroup(),
+              stageNode.getDeploymentStageConfig().getEnvironment());
+        }
+      });
 
       // Add dependency for execution
       YamlField executionField = specField.getNode().getField(YAMLFieldNameConstants.EXECUTION);
@@ -191,6 +206,16 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       PlanNode gitopsNode = ClusterPlanCreator.getGitopsClustersStepPlanNode(envV2);
       planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     }
+  }
+
+  private Optional<NGServiceConfig> fetchServiceConfig(PlanCreationContext ctx, ServiceYamlV2 yaml) {
+    if (yaml == null || isEmpty((String) yaml.getServiceRef().fetchFinalValue())) {
+      return Optional.empty();
+    }
+    Optional<ServiceEntity> entity =
+        serviceEntityService.get(ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
+            ctx.getMetadata().getProjectIdentifier(), (String) yaml.getServiceRef().fetchFinalValue(), false);
+    return entity.map(NGServiceEntityMapper::toNGServiceConfig);
   }
 
   private void addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,
