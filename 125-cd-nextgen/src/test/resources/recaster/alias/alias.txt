@@ -367,3 +367,4 @@ io.harness.cdng.configfile.steps.ConfigFileStepParameters
 io.harness.cdng.configfile.ConfigFileAttributes
 io.harness.cdng.configfile.steps.ConfigFilesOutcome
 io.harness.cdng.manifest.yaml.harness.HarnessStore
+io.harness.cdng.gitops.steps.ClusterStepParameters
