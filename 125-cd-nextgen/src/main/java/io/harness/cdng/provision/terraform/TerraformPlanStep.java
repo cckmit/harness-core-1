@@ -11,6 +11,7 @@ import io.harness.EntityType;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.IdentifierRef;
+import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.common.ParameterFieldHelper;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.task.terraform.TFTaskType;
@@ -194,6 +195,12 @@ public class TerraformPlanStep extends TaskExecutableWithRollbackAndRbac<Terrafo
           helper.generateFullIdentifier(
               ParameterFieldHelper.getParameterFieldValue(planStepParameters.getProvisionerIdentifier()), ambiance),
           terraformTaskNGResponse.getStateFileId());
+      stepResponseBuilder.stepOutcome(StepResponse.StepOutcome.builder()
+                                          .name(TerraformPlanOutcome.OUTCOME_NAME)
+                                          .outcome(TerraformPlanOutcome.builder()
+                                                       .detailedExitCode(terraformTaskNGResponse.getDetailedExitCode())
+                                                       .build())
+                                          .build());
     }
     return stepResponseBuilder.build();
   }
