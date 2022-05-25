@@ -88,10 +88,9 @@ public class EnvironmentPlanCreatorHelper {
           accountIdentifier, orgIdentifier, projectIdentifier, environmentV2, infrastructure);
       return EnvironmentPlanCreatorConfigMapper.toEnvironmentPlanCreatorConfig(
           environment.get(), infrastructureEntityList);
+    } else {
+      return EnvironmentPlanCreatorConfigMapper.toEnvPlanCreatorConfigWithGitops(environment.get(), environmentV2);
     }
-    // TODO: need to handle gitOps cluster
-    throw new InvalidRequestException(
-        String.format("Environment with id %s does not exists or has been deleted", envIdentifier));
   }
 
   private List<InfrastructureEntity> getInfraStructureEntityList(String accountIdentifier, String orgIdentifier,

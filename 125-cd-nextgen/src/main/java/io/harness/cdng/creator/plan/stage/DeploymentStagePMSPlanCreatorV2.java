@@ -12,11 +12,9 @@ import static io.harness.data.structure.EmptyPredicate.isEmpty;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.environment.EnvironmentPlanCreatorHelper;
-import io.harness.cdng.creator.plan.gitops.ClusterPlanCreator;
 import io.harness.cdng.creator.plan.infrastructure.InfrastructurePmsPlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreator;
 import io.harness.cdng.creator.plan.service.ServicePlanCreatorHelper;
-import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
 import io.harness.cdng.pipeline.PipelineInfrastructure;
@@ -170,18 +168,8 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       // Spec node is also added in this method
       addServiceDependency(planCreationResponseMap, specField, stageNode, ctx);
 
-      final Optional<NGServiceV2InfoConfig> ngServiceConfig =
-          fetchServiceConfig(ctx, stageNode.getDeploymentStageConfig().getService())
-              .map(NGServiceConfig::getNgServiceV2InfoConfig);
       PipelineInfrastructure pipelineInfrastructure = stageNode.getDeploymentStageConfig().getInfrastructure();
       addEnvAndInfraDependency(ctx, stageNode, planCreationResponseMap, specField, pipelineInfrastructure);
-      ngServiceConfig.map(NGServiceV2InfoConfig::isGitOpsEnabled).ifPresent(ge -> {
-        if (ge) {
-          addGitopsClustersDependency(planCreationResponseMap,
-              stageNode.getDeploymentStageConfig().getEnvironmentGroup(),
-              stageNode.getDeploymentStageConfig().getEnvironment());
-        }
-      });
 
       // Add dependency for execution
       YamlField executionField = specField.getNode().getField(YAMLFieldNameConstants.EXECUTION);
@@ -194,17 +182,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     } catch (IOException e) {
       throw new InvalidRequestException(
           "Invalid yaml for Deployment stage with identifier - " + stageNode.getIdentifier(), e);
-    }
-  }
-
-  private void addGitopsClustersDependency(LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap,
-      EnvironmentGroupYaml envGroupYaml, EnvironmentYamlV2 envV2) {
-    if (envGroupYaml != null) {
-      PlanNode gitopsNode = ClusterPlanCreator.getGitopsClustersStepPlanNode(envGroupYaml);
-      planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
-    } else if (envV2 != null) {
-      PlanNode gitopsNode = ClusterPlanCreator.getGitopsClustersStepPlanNode(envV2);
-      planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     }
   }
 
@@ -256,9 +233,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       planCreationResponseMap.putAll(InfrastructurePmsPlanCreator.createPlanForInfraSection(
           infraNode, infraDefPlanNode.getUuid(), pipelineInfrastructure, kryoSerializer));
     } else {
-      // TODO: need to fetch gitOpsEnabled from serviceDefinition for gitOps cluster. Currently  passing hard coded
-      // value as false
-      boolean gitOpsEnabled = false;
+      final boolean gitOpsEnabled = isGitopsEnabled(ctx, stageNode.getDeploymentStageConfig().getService());
       EnvironmentPlanCreatorConfig environmentPlanCreatorConfig = EnvironmentPlanCreatorHelper.getResolvedEnvRefs(
           ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
           ctx.getMetadata().getProjectIdentifier(), environmentV2, gitOpsEnabled, environmentService, infrastructure);
@@ -359,5 +334,12 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
       throw new InvalidRequestException(
           "There should be a Failure strategy that contains one error type as AllErrors, with no other error type along with it in that Failure Strategy.");
     }
+  }
+
+  private boolean isGitopsEnabled(PlanCreationContext ctx, ServiceYamlV2 yaml) {
+    Optional<NGServiceConfig> ngServiceConfig = fetchServiceConfig(ctx, yaml);
+    Optional<Boolean> gitopsEnabled =
+        ngServiceConfig.map(NGServiceConfig::getNgServiceV2InfoConfig).map(NGServiceV2InfoConfig::isGitOpsEnabled);
+    return gitopsEnabled.orElse(false);
   }
 }

@@ -4,17 +4,13 @@ import static io.harness.data.structure.EmptyPredicate.isNotEmpty;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static java.lang.String.format;
-import static java.util.function.Function.identity;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
-import io.harness.cdng.envgroup.yaml.EnvironmentGroupYaml;
-import io.harness.cdng.environment.yaml.EnvironmentYamlV2;
+import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.gitops.steps.ClusterStepParameters;
 import io.harness.cdng.gitops.steps.GitopsClustersStep;
-import io.harness.cdng.gitops.yaml.ClusterYaml;
 import io.harness.data.structure.UUIDGenerator;
 import io.harness.pms.contracts.facilitators.FacilitatorObtainment;
 import io.harness.pms.contracts.facilitators.FacilitatorType;
@@ -24,7 +20,6 @@ import io.harness.pms.yaml.ParameterField;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 import javax.validation.constraints.NotNull;
 import lombok.experimental.UtilityClass;
 
@@ -32,13 +27,13 @@ import lombok.experimental.UtilityClass;
 @UtilityClass
 public class ClusterPlanCreator {
   @NotNull
-  public PlanNode getGitopsClustersStepPlanNode(final EnvironmentYamlV2 environmentYamlV2) {
+  public PlanNode getGitopsClustersStepPlanNode(EnvironmentPlanCreatorConfig envConfig) {
     return PlanNode.builder()
         .uuid(UUIDGenerator.generateUuid())
         .name(PlanCreatorConstants.GITOPS_INFRA_NODE_NAME)
         .identifier(PlanCreatorConstants.SPEC_IDENTIFIER)
         .stepType(GitopsClustersStep.STEP_TYPE)
-        .stepParameters(getStepParams(environmentYamlV2))
+        .stepParameters(getStepParams(envConfig))
         .facilitatorObtainment(
             FacilitatorObtainment.newBuilder()
                 .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
@@ -46,71 +41,25 @@ public class ClusterPlanCreator {
         .build();
   }
 
-  @NotNull
-  public PlanNode getGitopsClustersStepPlanNode(final EnvironmentGroupYaml envGroupYaml) {
-    return PlanNode.builder()
-        .uuid(UUIDGenerator.generateUuid())
-        .name(PlanCreatorConstants.GITOPS_INFRA_NODE_NAME)
-        .identifier(PlanCreatorConstants.SPEC_IDENTIFIER)
-        .stepType(GitopsClustersStep.STEP_TYPE)
-        .stepParameters(getStepParams(envGroupYaml))
-        .facilitatorObtainment(
-            FacilitatorObtainment.newBuilder()
-                .setType(FacilitatorType.newBuilder().setType(OrchestrationFacilitatorType.SYNC).build())
-                .build())
-        .build();
-  }
+  private ClusterStepParameters getStepParams(EnvironmentPlanCreatorConfig envConfig) {
+    checkNotNull(envConfig, "environment must be present");
 
-  private ClusterStepParameters getStepParams(EnvironmentYamlV2 environmentYamlV2) {
-    checkNotNull(environmentYamlV2, "environment must be present");
-
-    final String envRef = fetchEnvRef(environmentYamlV2);
-    if (environmentYamlV2.getDeployToAll() == Boolean.TRUE) {
+    final String envRef = fetchEnvRef(envConfig);
+    if (envConfig.isDeployToAll()) {
       return ClusterStepParameters.WithEnv(envRef);
     }
-    checkArgument(isNotEmpty(environmentYamlV2.getGitOpsClusters()),
+    checkArgument(isNotEmpty(envConfig.getGitOpsClusterRefs()),
         "list of gitops clusterRefs must be provided when not deploying to all clusters");
 
-    return ClusterStepParameters.WithEnvAndClusterRefs(envRef, getClusterRefs(environmentYamlV2));
+    return ClusterStepParameters.WithEnvAndClusterRefs(envRef, getClusterRefs(envConfig));
   }
 
-  private ClusterStepParameters getStepParams(EnvironmentGroupYaml envGroupYaml) {
-    checkNotNull(envGroupYaml, "envGroupYaml must be present");
-
-    final ParameterField<String> envGroupRef = envGroupYaml.getEnvGroupRef();
-    checkNotNull(envGroupRef, "environment ref must be present");
-    checkArgument(!envGroupRef.isExpression(), "environment ref not resolved yet");
-
-    if (envGroupYaml.isDeployToAll()) {
-      final String envGroup = (String) envGroupRef.fetchFinalValue();
-      return ClusterStepParameters.WithEnvGroupRef(envGroup);
-    }
-
-    checkArgument(isNotEmpty(envGroupYaml.getEnvGroupConfig()),
-        "list of environments must be provided when not deploying to all environments");
-
-    final ClusterStepParameters parameters = ClusterStepParameters.builder().build();
-    envGroupYaml.getEnvGroupConfig()
-        .stream()
-        .collect(Collectors.toMap(e -> (String) e.getEnvironmentRef().fetchFinalValue(), identity()))
-        .values()
-        .forEach(envYaml -> parameters.and(fetchEnvRef(envYaml), envYaml.getDeployToAll(), getClusterRefs(envYaml)));
-
-    return parameters;
+  private Set<String> getClusterRefs(EnvironmentPlanCreatorConfig config) {
+    return new HashSet<>(config.getGitOpsClusterRefs());
   }
 
-  private Set<String> getClusterRefs(EnvironmentYamlV2 environmentYamlV2) {
-    final Set<String> clusterRefs = new HashSet<>();
-    for (ClusterYaml cluster : environmentYamlV2.getGitOpsClusters()) {
-      checkArgument(!cluster.getRef().isExpression(),
-          format("cluster ref %s is an expression, this is not supported", cluster.getRef()));
-      clusterRefs.add((String) cluster.getRef().fetchFinalValue());
-    }
-    return clusterRefs;
-  }
-
-  private String fetchEnvRef(EnvironmentYamlV2 environmentYamlV2) {
-    final ParameterField<String> environmentRef = environmentYamlV2.getEnvironmentRef();
+  private String fetchEnvRef(EnvironmentPlanCreatorConfig config) {
+    final ParameterField<String> environmentRef = config.getEnvironmentRef();
     checkNotNull(environmentRef, "environment ref must be present");
     checkArgument(!environmentRef.isExpression(), "environment ref not resolved yet");
     return (String) environmentRef.fetchFinalValue();
