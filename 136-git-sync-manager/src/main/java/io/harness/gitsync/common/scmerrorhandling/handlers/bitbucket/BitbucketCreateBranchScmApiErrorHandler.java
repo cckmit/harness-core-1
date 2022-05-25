@@ -12,7 +12,6 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.ScmBadRequestException;
-import io.harness.exception.ScmResourceNotFoundException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
@@ -49,7 +48,7 @@ public class BitbucketCreateBranchScmApiErrorHandler implements ScmApiErrorHandl
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(CREATE_BRANCH_NOT_FOUND_ERROR_HINT,
             CREATE_BRANCH_FAILED_MESSAGE + CREATE_BRANCH_NOT_FOUND_ERROR_EXPLANATION,
-            new ScmResourceNotFoundException(errorMessage));
+            new ScmBadRequestException(errorMessage));
       default:
         log.error(String.format("Error while creating bitbucket branch: [%s: %s]", statusCode, errorMessage));
         throw new ScmUnexpectedException(errorMessage);

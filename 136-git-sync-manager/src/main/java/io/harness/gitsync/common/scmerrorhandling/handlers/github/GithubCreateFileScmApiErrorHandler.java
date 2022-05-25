@@ -12,11 +12,10 @@ import static io.harness.gitsync.common.scmerrorhandling.handlers.github.ScmErro
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.NestedExceptionUtils;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmConflictException;
-import io.harness.exception.ScmResourceNotFoundException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
-import io.harness.exception.ScmUnprocessableEntityException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
@@ -49,13 +48,13 @@ public class GithubCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
             INVALID_CREDENTIALS, CREATE_FILE_WITH_INVALID_CREDS, new ScmUnauthorizedException(errorMessage));
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(CREATE_FILE_NOT_FOUND_ERROR_HINT,
-            CREATE_FILE_NOT_FOUND_ERROR_EXPLANATION, new ScmResourceNotFoundException(errorMessage));
+            CREATE_FILE_NOT_FOUND_ERROR_EXPLANATION, new ScmBadRequestException(errorMessage));
       case 409:
         throw NestedExceptionUtils.hintWithExplanationException(CREATE_FILE_CONFLICT_ERROR_HINT,
             CREATE_FILE_CONFLICT_ERROR_EXPLANATION, new ScmConflictException(errorMessage));
       case 422:
         throw NestedExceptionUtils.hintWithExplanationException(CREATE_FILE_UNPROCESSABLE_ENTITY_ERROR_HINT,
-            CREATE_FILE_UNPROCESSABLE_ENTITY_ERROR_EXPLANATION, new ScmUnprocessableEntityException(errorMessage));
+            CREATE_FILE_UNPROCESSABLE_ENTITY_ERROR_EXPLANATION, new ScmBadRequestException(errorMessage));
       default:
         throw new ScmUnexpectedException(errorMessage);
     }

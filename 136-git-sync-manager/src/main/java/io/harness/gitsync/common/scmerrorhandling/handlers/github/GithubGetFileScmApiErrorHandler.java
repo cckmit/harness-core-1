@@ -12,7 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.PL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.NestedExceptionUtils;
 import io.harness.exception.SCMExceptionErrorMessages;
-import io.harness.exception.ScmResourceNotFoundException;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
 import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
@@ -32,7 +32,7 @@ public class GithubGetFileScmApiErrorHandler implements ScmApiErrorHandler {
       case 404:
         throw NestedExceptionUtils.hintWithExplanationException(ScmErrorHints.FILE_NOT_FOUND,
             ScmErrorExplanations.FILE_NOT_FOUND,
-            new ScmResourceNotFoundException(SCMExceptionErrorMessages.FILE_NOT_FOUND_ERROR));
+            new ScmBadRequestException(SCMExceptionErrorMessages.FILE_NOT_FOUND_ERROR));
       default:
         throw new ScmUnexpectedException(errorMessage);
     }
