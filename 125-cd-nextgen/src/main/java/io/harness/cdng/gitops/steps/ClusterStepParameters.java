@@ -72,7 +72,7 @@ public class ClusterStepParameters implements StepParameters {
 
   @Data
   @Builder
-  private static class EnvClusterRefs {
+  public static class EnvClusterRefs {
     private String envRef;
     private Collection<String> clusterRefs;
     boolean deployToAll;

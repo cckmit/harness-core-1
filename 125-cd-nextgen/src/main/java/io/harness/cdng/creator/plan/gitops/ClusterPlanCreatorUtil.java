@@ -25,7 +25,7 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.GITOPS)
 @UtilityClass
-public class ClusterPlanCreator {
+public class ClusterPlanCreatorUtil {
   @NotNull
   public PlanNode getGitopsClustersStepPlanNode(EnvironmentPlanCreatorConfig envConfig) {
     return PlanNode.builder()
@@ -48,6 +48,7 @@ public class ClusterPlanCreator {
     if (envConfig.isDeployToAll()) {
       return ClusterStepParameters.WithEnv(envRef);
     }
+
     checkArgument(isNotEmpty(envConfig.getGitOpsClusterRefs()),
         "list of gitops clusterRefs must be provided when not deploying to all clusters");
 

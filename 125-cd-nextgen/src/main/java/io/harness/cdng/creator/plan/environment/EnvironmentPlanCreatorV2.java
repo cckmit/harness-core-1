@@ -11,7 +11,7 @@ import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.creator.plan.PlanCreatorConstants;
 import io.harness.cdng.creator.plan.environment.steps.EnvironmentStepV2;
-import io.harness.cdng.creator.plan.gitops.ClusterPlanCreator;
+import io.harness.cdng.creator.plan.gitops.ClusterPlanCreatorUtil;
 import io.harness.cdng.environment.steps.EnvironmentStepParameters;
 import io.harness.cdng.environment.yaml.EnvironmentPlanCreatorConfig;
 import io.harness.cdng.visitor.YamlTypes;
@@ -63,7 +63,8 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
     boolean gitOpsEnabled = (boolean) kryoSerializer.asInflatedObject(
         ctx.getDependency().getMetadataMap().get(YAMLFieldNameConstants.GITOPS_ENABLED).toByteArray());
     if (gitOpsEnabled) {
-      addGitopsClustersDependency(planCreationResponseMap, config);
+      PlanNode gitopsNode = ClusterPlanCreatorUtil.getGitopsClustersStepPlanNode(config);
+      planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     }
     return null;
   }
@@ -100,14 +101,5 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
                 .build())
         .skipExpressionChain(false)
         .build();
-  }
-
-  private void addGitopsClustersDependency(
-      LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, EnvironmentPlanCreatorConfig envConfig) {
-    // ToDo: Handle Env Groups
-    if (envConfig != null) {
-      PlanNode gitopsNode = ClusterPlanCreator.getGitopsClustersStepPlanNode(envConfig);
-      planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
-    }
   }
 }
