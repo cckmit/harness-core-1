@@ -93,10 +93,7 @@ public class VariableServiceImpl implements VariableService {
       }));
     } catch (DuplicateKeyException de) {
       throw new DuplicateFieldException(
-          String.format(
-              "A variable with identifier [%s] and orgIdentifier [%s] and projectIdentifier [%s] already present.",
-              variableDTO.getIdentifier(), variableDTO.getOrgIdentifier(), variableDTO.getProjectIdentifier()),
-          USER_SRE, de);
+          String.format("Variable with identifier [%s] already exists in this scope.", variableDTO.getIdentifier()));
     }
   }
 

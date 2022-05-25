@@ -39,6 +39,7 @@ import io.harness.delegate.beans.git.YamlGitConfigDTO;
 import io.harness.delegate.task.scm.GitFileTaskResponseData;
 import io.harness.delegate.task.scm.ScmGitFileTaskParams;
 import io.harness.delegate.task.scm.ScmGitRefTaskResponseData;
+import io.harness.delegate.task.scm.ScmPRTaskResponseData;
 import io.harness.delegate.task.scm.ScmPushTaskResponseData;
 import io.harness.exception.InvalidRequestException;
 import io.harness.gitsync.GitSyncTestBase;
@@ -50,6 +51,7 @@ import io.harness.gitsync.common.service.YamlGitConfigService;
 import io.harness.ng.beans.PageRequest;
 import io.harness.product.ci.scm.proto.CreateBranchResponse;
 import io.harness.product.ci.scm.proto.CreateFileResponse;
+import io.harness.product.ci.scm.proto.CreatePRResponse;
 import io.harness.product.ci.scm.proto.FileContent;
 import io.harness.product.ci.scm.proto.GetUserRepoResponse;
 import io.harness.product.ci.scm.proto.GetUserReposResponse;
@@ -93,6 +95,10 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
   String repoName = "repoName";
   String commitId = "commitId";
   String defaultBranch = "default";
+  String sourceBranch = "sourceBranch";
+  String targetBranch = "targetBranch";
+  String title = "title";
+  int prNumber = 0;
   GithubConnectorDTO githubConnector;
   ConnectorInfoDTO connectorInfo;
   Scope scope;
@@ -286,6 +292,7 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     assertThat(createFileResponse.getStatus()).isEqualTo(200);
     assertThat(createFileResponse.getCommitId()).isEqualTo(commitId);
   }
+
   @Test
   @Owner(developers = BHAVYA)
   @Category(UnitTests.class)
@@ -306,5 +313,26 @@ public class ScmDelegateFacilitatorServiceImplTest extends GitSyncTestBase {
     updateFileResponse = scmDelegateFacilitatorService.updateFile(updateGitFileRequestDTO);
     assertThat(updateFileResponse.getStatus()).isEqualTo(200);
     assertThat(updateFileResponse.getCommitId()).isEqualTo(commitId);
+  }
+
+  @Test
+  @Owner(developers = MOHIT_GARG)
+  @Category(UnitTests.class)
+  public void testCreatePullRequest() {
+    CreatePRResponse mockedCreatePRResponse = CreatePRResponse.newBuilder().setStatus(200).setNumber(prNumber).build();
+    when(delegateGrpcClientWrapper.executeSyncTask(any()))
+        .thenReturn(ScmPRTaskResponseData.builder().createPRResponse(mockedCreatePRResponse).build());
+    CreatePRResponse createPRResponse = scmDelegateFacilitatorService.createPullRequest(
+        getDefaultScope(), connectorRef, repoName, sourceBranch, targetBranch, title);
+    assertThat(createPRResponse.getStatus()).isEqualTo(200);
+    assertThat(createPRResponse.getNumber()).isEqualTo(prNumber);
+  }
+
+  private Scope getDefaultScope() {
+    return Scope.builder()
+        .accountIdentifier(accountIdentifier)
+        .projectIdentifier(projectIdentifier)
+        .orgIdentifier(orgIdentifier)
+        .build();
   }
 }

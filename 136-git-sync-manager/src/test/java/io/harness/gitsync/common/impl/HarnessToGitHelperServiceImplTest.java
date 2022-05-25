@@ -168,7 +168,12 @@ public class HarnessToGitHelperServiceImplTest extends GitSyncTestBase {
   public void testGetFileByBranchWhenSCMOpsIsSuccess() {
     GetFileRequest getFileRequest = getGetFileRequestDefault();
     when(scmFacilitatorService.getFileByBranch(any()))
-        .thenReturn(ScmGetFileResponseDTO.builder().fileContent(fileContent).commitId(commitId).blobId(blobId).build());
+        .thenReturn(ScmGetFileResponseDTO.builder()
+                        .fileContent(fileContent)
+                        .commitId(commitId)
+                        .blobId(blobId)
+                        .branchName(branch)
+                        .build());
     GetFileResponse getFileResponse = harnessToGitHelperService.getFileByBranch(getFileRequest);
 
     assertThat(getFileResponse.getFileContent()).isEqualTo(fileContent);

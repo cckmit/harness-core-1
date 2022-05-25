@@ -514,7 +514,7 @@ public class HarnessToGitHelperServiceImpl implements HarnessToGitHelperService 
         .setFileContent(scmGetFileResponseDTO.getFileContent())
         .setGitMetaData(GitMetaData.newBuilder()
                             .setRepoName(getFileRequest.getRepoName())
-                            .setBranchName(getFileRequest.getBranchName())
+                            .setBranchName(scmGetFileResponseDTO.getBranchName())
                             .setCommitId(scmGetFileResponseDTO.getCommitId())
                             .setBlobId(scmGetFileResponseDTO.getBlobId())
                             .setFilePath(getFileRequest.getFilePath())

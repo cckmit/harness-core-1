@@ -37,6 +37,7 @@ import static io.harness.delegate.message.MessageConstants.DELEGATE_START_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_ACQUIRING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_STOP_GRPC;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_SWITCH_STORAGE;
+import static io.harness.delegate.message.MessageConstants.DELEGATE_TOKEN_NAME;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_NEEDED;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_PENDING;
 import static io.harness.delegate.message.MessageConstants.DELEGATE_UPGRADE_STARTED;
@@ -729,6 +730,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       URIBuilder uriBuilder =
           new URIBuilder(delegateConfiguration.getManagerUrl().replace("/api/", "/stream/") + "delegate/" + accountId)
               .addParameter("delegateId", delegateId)
+              .addParameter("delegateTokenName", DelegateAgentCommonVariables.getDelegateTokenName())
               .addParameter("delegateConnectionId", delegateConnectionId)
               .addParameter("token", tokenGenerator.getToken("https", "localhost", 9090, HOST_NAME))
               .addParameter("sequenceNum", getSequenceNumForEcsDelegate())
@@ -1067,7 +1069,9 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
         continue;
       }
       builder.delegateId(responseDelegateId);
-      log.info("Delegate registered with id {}", responseDelegateId);
+      DelegateAgentCommonVariables.setDelegateTokenName(delegateResponse.getDelegateTokenName());
+      log.info("Delegate registered with id {} and delegate token name {}", responseDelegateId,
+          delegateResponse.getDelegateTokenName());
       return responseDelegateId;
     }
 
@@ -1515,6 +1519,7 @@ public class DelegateAgentServiceImpl implements DelegateAgentService {
       statusData.put(DELEGATE_SHUTDOWN_PENDING, !acquireTasks.get());
       // dont pass null delegateId, instead pass "Unregistered" as delegateId
       statusData.put(DELEGATE_ID, getDelegateId().orElse(UNREGISTERED));
+      statusData.put(DELEGATE_TOKEN_NAME, DelegateAgentCommonVariables.getDelegateTokenName());
       if (switchStorage.get() && !switchStorageMsgSent) {
         statusData.put(DELEGATE_SWITCH_STORAGE, TRUE);
         log.info("Switch storage message sent");

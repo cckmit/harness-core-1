@@ -610,18 +610,18 @@ public class PlanExecutionResource {
     }
     PipelineEntity pipelineEntity = optionalPipelineEntity.get();
     String yaml = pipelineEntity.getYaml();
-    boolean shouldAllowStageExecutions = pipelineEntity.shouldAllowStageExecutions();
     if (featureFlagService.isEnabled(accountId, NG_PIPELINE_TEMPLATE)
         && Boolean.TRUE.equals(optionalPipelineEntity.get().getTemplateReference())) {
       yaml = pipelineTemplateHelper
                  .resolveTemplateRefsInPipeline(accountId, orgIdentifier, projectIdentifier, pipelineEntity.getYaml())
                  .getMergedPipelineYaml();
-      try {
-        BasicPipeline basicPipeline = YamlUtils.read(yaml, BasicPipeline.class);
-        shouldAllowStageExecutions = basicPipeline.isAllowStageExecutions();
-      } catch (IOException e) {
-        throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage(), e);
-      }
+    }
+    boolean shouldAllowStageExecutions;
+    try {
+      BasicPipeline basicPipeline = YamlUtils.read(yaml, BasicPipeline.class);
+      shouldAllowStageExecutions = basicPipeline.isAllowStageExecutions();
+    } catch (IOException e) {
+      throw new InvalidRequestException("Cannot create pipeline entity due to " + e.getMessage(), e);
     }
 
     if (!shouldAllowStageExecutions) {
