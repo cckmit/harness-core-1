@@ -97,19 +97,18 @@ public class EnvironmentPlanCreatorConfigMapperTest extends CategoryTest {
   @Category(UnitTests.class)
   public void testToEnvPlanCreatorConfigWithGitopsDeployAll() {
     Environment entity = Environment.builder()
-            .accountId("accId")
-            .orgIdentifier("orgId")
-            .projectIdentifier("projId")
-            .name("env_name")
-            .identifier("envId")
-            .type(EnvironmentType.Production)
-            .tag(NGTag.builder().key("k").value("v").build())
-            .build();
-    EnvironmentYamlV2 envV2 =
-            EnvironmentYamlV2.builder()
-                    .environmentRef(ParameterField.<String>builder().value("envId").build())
-                    .deployToAll(true)
-                    .build();
+                             .accountId("accId")
+                             .orgIdentifier("orgId")
+                             .projectIdentifier("projId")
+                             .name("env_name")
+                             .identifier("envId")
+                             .type(EnvironmentType.Production)
+                             .tag(NGTag.builder().key("k").value("v").build())
+                             .build();
+    EnvironmentYamlV2 envV2 = EnvironmentYamlV2.builder()
+                                  .environmentRef(ParameterField.<String>builder().value("envId").build())
+                                  .deployToAll(true)
+                                  .build();
     EnvironmentPlanCreatorConfig config = toEnvPlanCreatorConfigWithGitops(entity, envV2);
 
     assertThat(config.getEnvironmentRef().getValue()).isEqualTo("envId");
