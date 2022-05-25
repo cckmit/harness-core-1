@@ -18,9 +18,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 public class ClusterPlanCreatorUtilTest extends CategoryTest {
-  @Category(UnitTests.class)
-  @Owner(developers = OwnerRule.YOGESH)
   @Test
+  @Owner(developers = OwnerRule.YOGESH)
+  @Category(UnitTests.class)
   public void testGetGitopsClustersStepPlanNode() {
     EnvironmentPlanCreatorConfig config = EnvironmentPlanCreatorConfig.builder()
                                               .environmentRef(ParameterField.<String>builder().value("env").build())
@@ -32,7 +32,7 @@ public class ClusterPlanCreatorUtilTest extends CategoryTest {
                                               .variables(asList(new StringNGVariable()))
                                               .gitOpsClusterRefs(asList("c1", "c2"))
                                               .build();
-    PlanNode planNode = ClusterPlanCreatorUtil.getGitopsClustersStepPlanNode(config);
+    PlanNode planNode = ClusterPlanCreatorUtils.getGitopsClustersStepPlanNode(config);
 
     ClusterStepParameters stepParameters = (ClusterStepParameters) planNode.getStepParameters();
 

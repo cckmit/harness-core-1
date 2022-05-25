@@ -25,7 +25,7 @@ import lombok.experimental.UtilityClass;
 
 @OwnedBy(HarnessTeam.GITOPS)
 @UtilityClass
-public class ClusterPlanCreatorUtil {
+public class ClusterPlanCreatorUtils {
   @NotNull
   public PlanNode getGitopsClustersStepPlanNode(EnvironmentPlanCreatorConfig envConfig) {
     return PlanNode.builder()

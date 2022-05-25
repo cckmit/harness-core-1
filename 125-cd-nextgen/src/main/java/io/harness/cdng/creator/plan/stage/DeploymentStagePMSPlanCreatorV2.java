@@ -28,10 +28,7 @@ import io.harness.exception.InvalidRequestException;
 import io.harness.ng.core.environment.services.EnvironmentService;
 import io.harness.ng.core.infrastructure.services.InfrastructureEntityService;
 import io.harness.ng.core.service.entity.ServiceEntity;
-import io.harness.ng.core.service.mappers.NGServiceEntityMapper;
 import io.harness.ng.core.service.services.ServiceEntityService;
-import io.harness.ng.core.service.yaml.NGServiceConfig;
-import io.harness.ng.core.service.yaml.NGServiceV2InfoConfig;
 import io.harness.plancreator.stages.AbstractStagePlanCreator;
 import io.harness.plancreator.steps.GenericStepPMSPlanCreator;
 import io.harness.plancreator.steps.common.SpecParameters;
@@ -185,16 +182,6 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     }
   }
 
-  private Optional<NGServiceConfig> fetchServiceConfig(PlanCreationContext ctx, ServiceYamlV2 yaml) {
-    if (yaml == null || isEmpty((String) yaml.getServiceRef().fetchFinalValue())) {
-      return Optional.empty();
-    }
-    Optional<ServiceEntity> entity =
-        serviceEntityService.get(ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
-            ctx.getMetadata().getProjectIdentifier(), (String) yaml.getServiceRef().fetchFinalValue(), false);
-    return entity.map(NGServiceEntityMapper::toNGServiceConfig);
-  }
-
   private void addEnvAndInfraDependency(PlanCreationContext ctx, DeploymentStageNode stageNode,
       LinkedHashMap<String, PlanCreationResponse> planCreationResponseMap, YamlField specField,
       PipelineInfrastructure pipelineInfrastructure) throws IOException {
@@ -325,7 +312,7 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
     // Failure strategy should be present.
     List<FailureStrategyConfig> stageFailureStrategies = stageNode.getFailureStrategies();
     if (EmptyPredicate.isEmpty(stageFailureStrategies)) {
-      throw new InvalidRequestException("There should be atleast one failure strategy configured at stage level.");
+      throw new InvalidRequestException("There should be at least one failure strategy configured at stage level.");
     }
 
     // checking stageFailureStrategies is having one strategy with error type as AllErrors and along with that no
@@ -337,9 +324,15 @@ public class DeploymentStagePMSPlanCreatorV2 extends AbstractStagePlanCreator<De
   }
 
   private boolean isGitopsEnabled(PlanCreationContext ctx, ServiceYamlV2 yaml) {
-    Optional<NGServiceConfig> ngServiceConfig = fetchServiceConfig(ctx, yaml);
-    Optional<Boolean> gitopsEnabled =
-        ngServiceConfig.map(NGServiceConfig::getNgServiceV2InfoConfig).map(NGServiceV2InfoConfig::isGitOpsEnabled);
-    return gitopsEnabled.orElse(false);
+    Optional<ServiceEntity> serviceEntity = fetchServiceEntity(ctx, yaml);
+    return serviceEntity.map(ServiceEntity::getGitOpsEnabled).orElse(false);
+  }
+
+  private Optional<ServiceEntity> fetchServiceEntity(PlanCreationContext ctx, ServiceYamlV2 yaml) {
+    if (yaml == null || isEmpty((String) yaml.getServiceRef().fetchFinalValue())) {
+      return Optional.empty();
+    }
+    return serviceEntityService.get(ctx.getMetadata().getAccountIdentifier(), ctx.getMetadata().getOrgIdentifier(),
+        ctx.getMetadata().getProjectIdentifier(), (String) yaml.getServiceRef().fetchFinalValue(), false);
   }
 }

@@ -64,7 +64,7 @@ public class EnvironmentPlanCreatorConfigMapper {
         .variables(ngEnvironmentInfoConfig.getVariables())
         .serviceOverrides(ngEnvironmentInfoConfig.getServiceOverrides())
         .gitOpsClusterRefs(getClusterRefs(envYaml))
-        .deployToAll(envYaml.getDeployToAll() != null ? envYaml.getDeployToAll() : false)
+        .deployToAll(envYaml.getDeployToAll() != null && envYaml.getDeployToAll())
         .build();
   }
 
