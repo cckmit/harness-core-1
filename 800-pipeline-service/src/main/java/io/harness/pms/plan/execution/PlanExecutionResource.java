@@ -150,7 +150,7 @@ public class PlanExecutionResource {
       @QueryParam("useFQNIfError") @DefaultValue("false") boolean useFQNIfErrorResponse,
       @ApiParam(hidden = true) @Parameter(
           description =
-              "InputSet YAML if the pipeline contains runtime inputs. This will be empty by default if pipeline does not contains runtime inputs")
+              "Enter Runtime Input YAML if the Pipeline contains Runtime Inputs. Please refer to https://ngdocs.harness.io/article/f6yobn7iq0 and https://ngdocs.harness.io/article/1eishcolt3 to see how to generate Runtime Input YAML for a Pipeline.")
       String inputSetPipelineYaml) {
     PlanExecutionResponseDto planExecutionResponseDto = pipelineExecutor.runPipelineWithInputSetPipelineYaml(
         accountId, orgIdentifier, projectIdentifier, pipelineIdentifier, moduleType, inputSetPipelineYaml, false);

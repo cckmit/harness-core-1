@@ -5,11 +5,10 @@
  * https://polyformproject.org/wp-content/uploads/2020/05/PolyForm-Free-Trial-1.0.0.txt.
  */
 
-package io.harness.gitsync.common.dtos;
+package io.harness.gitaware.dto;
 
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.Scope;
 
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -20,10 +19,12 @@ import lombok.experimental.FieldDefaults;
 @Getter
 @FieldDefaults(level = AccessLevel.PRIVATE)
 @Builder
-public class ScmCreateBranchRequestDTO {
-  Scope scope;
+public class GitContextRequestParams {
   String repoName;
-  String baseBranchName;
   String branchName;
+  String filePath;
+  String commitId;
   String connectorRef;
+  boolean isNewBranch;
+  String newBranchName;
 }

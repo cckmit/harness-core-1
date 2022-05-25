@@ -52,6 +52,7 @@ public interface YamlTypes {
   String SPEC = "spec";
   String PIPELINE_INFRASTRUCTURE = "infrastructure";
   String SERVICE_CONFIG = "serviceConfig";
+  String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
   String SERVICE_DEFINITION = "serviceDefinition";

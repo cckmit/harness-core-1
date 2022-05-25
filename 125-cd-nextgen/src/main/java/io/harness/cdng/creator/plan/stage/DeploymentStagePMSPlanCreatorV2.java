@@ -73,13 +73,17 @@ import lombok.SneakyThrows;
  *              service (next = serviceDefinitionNode)
  *              serviceDefinition (1 children, env)
  *                Environment (next = spec node)
+ *                spec
+ *                  artifacts
+ *                  manifests
  *          infrastructure. envRef
  *          execution
  *
  * Stage plan graph V2 -
  *  Stage
  *      spec (1 children, service)
- *          service (1 children, serviceDefinition, next = infra)
+ *          serviceSection (1 children, service, next = infra) [Done to keep previous plan creators in sync with v2]
+ *              service (next = serviceDef)
  *              serviceDefinition (1 children, env)
  *                Environment (next = spec node)
  *                spec

@@ -1974,6 +1974,7 @@
 970007:io.harness.exception.PlanCreatorException
 970008:io.harness.serviceaccount.ServiceAccountDTO
 970009:io.harness.SchemaCacheKey
+970010:io.harness.gitsync.beans.StoreType
 980001:io.harness.security.PrincipalContextData
 980002:io.harness.security.dto.UserPrincipal
 980003:io.harness.security.SourcePrincipalContextData
