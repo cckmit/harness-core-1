@@ -96,6 +96,7 @@ public class HintException extends WingsException {
   public static final String HINT_INVALID_GIT_REPO = "Please provide valid git repository url";
   public static final String HINT_INVALID_GIT_HOST =
       "Please provide valid git repository url and ensure delegate to git provider connectivity";
+  public static final String HINT_GIT_RETRY = "Please try again and ensure your repo and credentials are correct";
   public static final String HINT_INVALID_GIT_AUTHORIZATION = "Please ensure that the credentials are correct.";
   public static final String HINT_INVALID_GIT_AUTHENTICATION =
       "Please ensure that the authentication is supported by git provider.";
