@@ -64,12 +64,12 @@ public class EnvironmentPlanCreatorConfigMapper {
         .variables(ngEnvironmentInfoConfig.getVariables())
         .serviceOverrides(ngEnvironmentInfoConfig.getServiceOverrides())
         .gitOpsClusterRefs(getClusterRefs(envYaml))
-        .deployToAll(envYaml.getDeployToAll())
+        .deployToAll(envYaml.getDeployToAll() != null ? envYaml.getDeployToAll() : false)
         .build();
   }
 
   private List<String> getClusterRefs(EnvironmentYamlV2 environmentV2) {
-    if (!environmentV2.getDeployToAll()) {
+    if (environmentV2.getDeployToAll() != Boolean.TRUE) {
       return environmentV2.getGitOpsClusters()
           .stream()
           .map(ClusterYaml::getRef)

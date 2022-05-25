@@ -66,7 +66,7 @@ public class EnvironmentPlanCreatorV2 extends ChildrenPlanCreator<EnvironmentPla
       PlanNode gitopsNode = ClusterPlanCreatorUtil.getGitopsClustersStepPlanNode(config);
       planCreationResponseMap.put(gitopsNode.getUuid(), PlanCreationResponse.builder().planNode(gitopsNode).build());
     }
-    return null;
+    return planCreationResponseMap;
   }
 
   @Override
