@@ -61,6 +61,7 @@ io.harness.cdng.provision.terraform.TerraformPlanStepInfo
 io.harness.cdng.manifest.yaml.HelmChartManifestOutcome
 io.harness.cdng.service.beans.ServiceUseFromStage$Overrides
 io.harness.cdng.provision.terraform.TerraformApplyOutcome
+io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome
 io.harness.steps.approval.step.harness.HarnessApprovalStepInfo
 io.harness.steps.http.HttpOutcome
 io.harness.cdng.infra.yaml.K8SDirectInfrastructure

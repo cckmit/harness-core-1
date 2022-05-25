@@ -152,7 +152,7 @@ public class TerraformClientImplTest extends CategoryTest {
     TerraformPlanCommandRequest terraformPlanCommandRequest =
         TerraformPlanCommandRequest.builder().destroySet(true).build();
 
-    String command = format("terraform plan -input=false -destroy -out=tfdestroyplan %s %s",
+    String command = format("terraform plan -input=false -detailed-exitcode -destroy -out=tfdestroyplan %s %s",
         TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getTargets(), "-target="),
         TerraformHelperUtils.generateCommandFlagsString(terraformPlanCommandRequest.getVarFilePaths(), "-var-file="));
     doReturn(cliResponse)
@@ -334,6 +334,11 @@ public class TerraformClientImplTest extends CategoryTest {
         .executeCliCommand(and(contains("terraform"), contains("version")), anyLong(),
             anyMapOf(String.class, String.class), anyString(), any(LogCallback.class));
 
+    doReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+        .when(cliHelper)
+        .executeCliCommand(contains("terraform"), anyLong(), anyMapOf(String.class, String.class), anyString(),
+            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class));
+
     terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(),
         SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
 
@@ -353,6 +358,11 @@ public class TerraformClientImplTest extends CategoryTest {
         .when(cliHelper)
         .executeCliCommand(and(contains("terraform"), contains("version")), anyLong(),
             anyMapOf(String.class, String.class), anyString(), any(LogCallback.class));
+
+    doReturn(CliResponse.builder().commandExecutionStatus(CommandExecutionStatus.SUCCESS).build())
+        .when(cliHelper)
+        .executeCliCommand(contains("terraform"), anyLong(), anyMapOf(String.class, String.class), anyString(),
+            any(LogCallback.class), contains("terraform"), any(LogOutputStream.class));
 
     terraformClientImpl.show("planName", DEFAULT_TERRAFORM_COMMAND_TIMEOUT, Collections.emptyMap(),
         SCRIPT_FILES_DIRECTORY, logCallback, planJsonLogOutputStream);
