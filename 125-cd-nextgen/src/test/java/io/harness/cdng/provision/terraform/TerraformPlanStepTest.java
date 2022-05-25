@@ -25,6 +25,7 @@ import io.harness.beans.EnvironmentType;
 import io.harness.category.element.UnitTests;
 import io.harness.cdng.featureFlag.CDFeatureFlagHelper;
 import io.harness.cdng.manifest.yaml.storeConfig.StoreConfigType;
+import io.harness.cdng.provision.terraform.outcome.TerraformPlanOutcome;
 import io.harness.connector.ConnectorInfoDTO;
 import io.harness.delegate.beans.TaskData;
 import io.harness.delegate.beans.connector.ConnectorType;
@@ -338,11 +339,17 @@ public class TerraformPlanStepTest extends CategoryTest {
     TerraformTaskNGResponse terraformTaskNGResponse = TerraformTaskNGResponse.builder()
                                                           .commandExecutionStatus(CommandExecutionStatus.SUCCESS)
                                                           .unitProgressData(unitProgressData)
+                                                          .detailedExitCode(2)
                                                           .build();
     StepResponse stepResponse = terraformPlanStep.handleTaskResultWithSecurityContext(
         ambiance, stepElementParameters, () -> terraformTaskNGResponse);
     assertThat(stepResponse.getStatus()).isEqualTo(Status.SUCCEEDED);
     assertThat(stepResponse.getStepOutcomes()).isNotNull();
+    assertThat(stepResponse.getStepOutcomes()).hasSize(1);
+    StepResponse.StepOutcome stepOutcome = ((List<StepResponse.StepOutcome>) stepResponse.getStepOutcomes()).get(0);
+    assertThat(stepOutcome.getOutcome()).isInstanceOf(TerraformPlanOutcome.class);
+    assertThat(((TerraformPlanOutcome) (stepOutcome.getOutcome())).getDetailedExitCode()).isEqualTo(2);
+
     verify(terraformStepHelper, times(1)).saveTerraformInheritOutput(any(), any(), any());
     verify(terraformStepHelper, times(1)).updateParentEntityIdAndVersion(any(), any());
   }
