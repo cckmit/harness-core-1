@@ -34,12 +34,13 @@ import org.junit.experimental.categories.Category;
 import org.reflections.Reflections;
 
 @Slf4j
-public class CvNextGenCommonsBeansKryoRegistrarTest extends CvNextGenCommonsTestBase {
+public class CvNextGenCommonsKryoRegistrarTest extends CvNextGenCommonsTestBase {
   KryoSerializer kryoSerializer;
 
   @Before
   public void before() {
-    kryoSerializer = new KryoSerializer(new HashSet<>(Arrays.asList(CvNextGenCommonsBeansKryoRegistrar.class)));
+    kryoSerializer = new KryoSerializer(
+        new HashSet<>(Arrays.asList(CvNextGenCommonsKryoRegistrar.class, CvNextGenBeansKryoRegistrar.class)));
   }
 
   @Test
@@ -101,7 +102,7 @@ public class CvNextGenCommonsBeansKryoRegistrarTest extends CvNextGenCommonsTest
       return false;
     }
     final String location = CodeUtils.location(clazz);
-    final String currentLocation = CodeUtils.location(CvNextGenCommonsBeansKryoRegistrar.class);
+    final String currentLocation = CodeUtils.location(CvNextGenCommonsKryoRegistrar.class);
     if (!currentLocation.equals(location)) {
       return false;
     }

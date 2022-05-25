@@ -32,6 +32,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -251,16 +252,17 @@ public class EntitySetupUsageServiceImpl implements EntitySetupUsageService {
 
   public List<EntitySetupUsage> filterSetupUsageByEntityTypes(
       List<EntitySetupUsage> entitySetupUsages, EntityType entityTypeAllowed) {
-    return EmptyPredicate.isEmpty(entitySetupUsages)
-        ? Collections.emptyList()
-        : entitySetupUsages.stream()
-              .filter(entitySetupUsage -> {
-                if (entitySetupUsage.getReferredEntity() != null) {
-                  return entitySetupUsage.getReferredEntity().getType() == entityTypeAllowed;
-                }
-                return false;
-              })
-              .collect(Collectors.toList());
+    if (EmptyPredicate.isEmpty(entitySetupUsages)) {
+      return Collections.emptyList();
+    }
+    HashSet<EntitySetupUsage> uniqueEntitySetupUsages = new HashSet<>();
+    for (EntitySetupUsage entitySetupUsage : entitySetupUsages) {
+      if (entitySetupUsage.getReferredEntity() != null
+          && entitySetupUsage.getReferredEntity().getType() == entityTypeAllowed) {
+        uniqueEntitySetupUsages.add(entitySetupUsage);
+      }
+    }
+    return new ArrayList<>(uniqueEntitySetupUsages);
   }
 
   @Override

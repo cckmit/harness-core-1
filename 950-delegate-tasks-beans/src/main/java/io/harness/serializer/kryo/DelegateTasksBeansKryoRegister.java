@@ -24,6 +24,8 @@ import io.harness.capability.SocketConnectivityParameters;
 import io.harness.capability.SystemEnvParameters;
 import io.harness.capability.TestingCapability;
 import io.harness.ccm.config.CCMConfig;
+import io.harness.cvng.beans.DataCollectionConnectorBundle;
+import io.harness.cvng.beans.DataCollectionType;
 import io.harness.delegate.beans.DelegateStringProgressData;
 import io.harness.delegate.beans.DelegateStringResponseData;
 import io.harness.delegate.beans.DelegateTaskDetails;
@@ -769,6 +771,8 @@ public class DelegateTasksBeansKryoRegister implements KryoRegistrar {
     kryo.register(FetchS3FilesExecutionResponse.FetchS3FilesCommandStatus.class, 8070);
     kryo.register(TfVarGitSource.class, 8097);
     kryo.register(AwsElbConfig.class, 8500);
+    kryo.register(DataCollectionConnectorBundle.class, 9019);
+    kryo.register(DataCollectionType.class, 9028);
     kryo.register(PerpetualTaskBroadcastEvent.class, 40015);
     kryo.register(GitConfig.ProviderType.class, 40022);
     kryo.register(PhysicalDataCenterConfig.class, 40098);

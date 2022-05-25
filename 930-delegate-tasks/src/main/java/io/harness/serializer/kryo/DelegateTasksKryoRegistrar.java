@@ -10,8 +10,6 @@ package io.harness.serializer.kryo;
 import io.harness.beans.EncryptedData;
 import io.harness.beans.EncryptedDataParent;
 import io.harness.beans.SecretChangeLog;
-import io.harness.cvng.beans.DataCollectionRequest;
-import io.harness.cvng.beans.DataCollectionRequestType;
 import io.harness.cvng.beans.SplunkSavedSearch;
 import io.harness.cvng.beans.SplunkValidationResponse;
 import io.harness.delegate.task.executioncapability.BatchCapabilityCheckTaskParameters;
@@ -890,8 +888,6 @@ public class DelegateTasksKryoRegistrar implements KryoRegistrar {
     kryo.register(SplunkValidationResponse.SplunkSampleResponse.class, 9015);
     kryo.register(SplunkValidationResponse.class, 9017);
     kryo.register(SplunkValidationResponse.SampleLog.class, 9018);
-    kryo.register(DataCollectionRequest.class, 9033);
-    kryo.register(DataCollectionRequestType.class, 9036);
     kryo.register(RancherClusterElement.class, 50002);
     kryo.register(ServiceHelmElement.class, 400135);
 

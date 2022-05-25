@@ -7,13 +7,19 @@
 
 package io.harness.utils.featureflaghelper;
 
+import io.harness.account.AccountClient;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.beans.FeatureName;
+import io.harness.remote.client.RestClientUtils;
 
-import javax.validation.constraints.NotNull;
+import com.google.inject.Inject;
 
 @OwnedBy(HarnessTeam.PL)
-public interface FeatureFlagHelperService {
-  boolean isEnabled(String accountId, @NotNull FeatureName featureName);
+public class NGFeatureFlagHelperService {
+  @Inject AccountClient accountClient;
+
+  public boolean isEnabled(String accountId, FeatureName featureName) {
+    return RestClientUtils.getResponse(accountClient.isFeatureFlagEnabled(featureName.name(), accountId));
+  }
 }
