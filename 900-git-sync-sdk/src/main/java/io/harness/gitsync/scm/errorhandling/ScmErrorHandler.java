@@ -34,9 +34,8 @@ public class ScmErrorHandler {
   void handleError(int statusCode, ScmErrorDetails errorDetails) {
     switch (statusCode) {
       case 400:
-        throw prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails);
       case 401:
-        throw prepareException(new ScmUnauthorizedException(errorDetails.getErrorMessage()), errorDetails);
+        throw prepareException(new ScmBadRequestException(errorDetails.getErrorMessage()), errorDetails);
       case 409:
         throw prepareException(new ScmConflictException(errorDetails.getErrorMessage()), errorDetails);
       case 500:

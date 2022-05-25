@@ -27,7 +27,6 @@ public class ScmErrorCodeToHttpStatusCodeMapping {
         return 401;
       case SCM_CONFLICT_ERROR_V2:
         return 409;
-      case SCM_INTERNAL_SERVER_ERROR_V2:
       default:
         return HTTP_500;
     }
