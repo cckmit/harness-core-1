@@ -47,7 +47,9 @@ import java.security.GeneralSecurityException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -91,33 +93,37 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
     }
     CloudResourceManager service = null;
     try {
-      service = createCloudResourceManagerService(impersonatedServiceAccount);
+      if (!configuration.getCeGcpSetupConfig().isEnableServiceAccountPermissionsCheck()) {
+        log.info("Service-account permissions check is disabled in config.");
+      } else {
+        service = createCloudResourceManagerService(impersonatedServiceAccount);
+      }
     } catch (IOException | GeneralSecurityException e) {
       log.error("Unable to initialize Cloud-Resource-Manager Service: ", e);
       errorList.add(ErrorDetail.builder()
-                        .reason("Harness Service Account Credentials could not be verified.")
+                        .reason("Failed to test required permissions for service account " + impersonatedServiceAccount)
                         .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
                         .code(500)
                         .build());
       return ConnectorValidationResult.builder()
-          .errorSummary("Service account credentials could not be verified for " + impersonatedServiceAccount)
+          .errorSummary("Failed to test required permissions for service account " + impersonatedServiceAccount)
           .errors(errorList)
           .status(ConnectivityStatus.FAILURE)
           .build();
     }
     try {
-      if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {
-        ConnectorValidationResult visibilityPermissionsValidationResult = validatePermissionsList(
-            service, projectId, getRequiredPermissionsForVisibility(), impersonatedServiceAccount);
-        if (visibilityPermissionsValidationResult.getStatus().equals(ConnectivityStatus.FAILURE)) {
-          return visibilityPermissionsValidationResult;
+      if (configuration.getCeGcpSetupConfig().isEnableServiceAccountPermissionsCheck()) {
+        Set<String> requiredPermissions = new HashSet<>();
+        if (featuresEnabled.contains(CEFeatures.VISIBILITY)) {
+          requiredPermissions.addAll(getRequiredPermissionsForVisibility());
         }
-      }
-      if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
-        ConnectorValidationResult optimizationPermissionsValidationResult = validatePermissionsList(
-            service, projectId, getRequiredPermissionsForOptimization(), impersonatedServiceAccount);
-        if (optimizationPermissionsValidationResult.getStatus().equals(ConnectivityStatus.FAILURE)) {
-          return optimizationPermissionsValidationResult;
+        if (featuresEnabled.contains(CEFeatures.OPTIMIZATION)) {
+          requiredPermissions.addAll(getRequiredPermissionsForOptimization());
+        }
+        ConnectorValidationResult permissionsValidationResult = validatePermissionsList(
+            service, projectId, new ArrayList<>(requiredPermissions), impersonatedServiceAccount);
+        if (permissionsValidationResult != null) {
+          return permissionsValidationResult;
         }
       }
       ConnectorValidationResult connectorValidationResult =
@@ -187,23 +193,23 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
 
       if (testIamPermissionsResponse.getPermissions() != null
           && testIamPermissionsResponse.getPermissions().containsAll(permissionsList)) {
-        log.info("Required Permissions validated successfully.");
-        return ConnectorValidationResult.builder()
-            .status(ConnectivityStatus.SUCCESS)
-            .testedAt(Instant.now().toEpochMilli())
-            .build();
+        return null;
       }
 
       List<String> missingPermissions = new ArrayList<>(permissionsList);
       if (testIamPermissionsResponse.getPermissions() != null) {
         missingPermissions.removeAll(testIamPermissionsResponse.getPermissions());
       }
-      log.error("Some permissions were found to be missing. {}", missingPermissions);
-      errorList.add(ErrorDetail.builder()
-                        .reason("Some required permissions were found to be missing")
-                        .message("Please check if service account " + impersonatedServiceAccount
-                            + " has all the required permissions. " + missingPermissions)
-                        .build());
+      log.error("Some required permissions were found to be missing for service account {}. {}",
+          impersonatedServiceAccount, missingPermissions);
+      for (String missingPermission : missingPermissions) {
+        errorList.add(ErrorDetail.builder()
+                          .reason(missingPermission + " permission was found to be missing for service account "
+                              + impersonatedServiceAccount)
+                          .message("Review GCP access permissions as per the documentation.")
+                          .code(403)
+                          .build());
+      }
       return ConnectorValidationResult.builder()
           .errorSummary(
               "Some required permissions were found to be missing for service account " + impersonatedServiceAccount)
@@ -212,13 +218,13 @@ public class CEGcpConnectorValidator extends io.harness.ccm.connectors.AbstractC
           .testedAt(Instant.now().toEpochMilli())
           .build();
     } catch (IOException e) {
-      log.error("Unable to test permissions", e);
+      log.error("Failed to test required permissions", e);
       errorList.add(ErrorDetail.builder()
-                        .reason("Unable to test required permissions")
+                        .reason("Failed to test required permissions")
                         .message("") // UI adds "Contact Harness Support or Harness Community Forum." in this case
                         .build());
       return ConnectorValidationResult.builder()
-          .errorSummary("Unable to test required permissions for service account " + impersonatedServiceAccount)
+          .errorSummary("Failed to test required permissions for service account " + impersonatedServiceAccount)
           .errors(errorList)
           .status(ConnectivityStatus.FAILURE)
           .build();

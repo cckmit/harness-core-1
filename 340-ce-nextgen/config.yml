@@ -135,6 +135,10 @@ ceAzureSetupConfig:
   azureAppClientSecret: azureAppClientSecretplaceholder
   enableFileCheckAtSource: false
 
+ceGcpSetupConfig:
+  gcpProjectId: gcpProjectIdPlaceHolder
+  enableServiceAccountPermissionsCheck: true
+
 awsConfig:
   accessKey: accessKey_placeholder
   secretKey: secretKey_placeholder
