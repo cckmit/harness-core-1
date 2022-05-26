@@ -85,6 +85,9 @@ import io.harness.exception.exceptionmanager.ExceptionModule;
 import io.harness.exception.exceptionmanager.exceptionhandler.CCMConnectorExceptionHandler;
 import io.harness.exception.exceptionmanager.exceptionhandler.ExceptionHandler;
 import io.harness.file.NGFileServiceModule;
+import io.harness.filter.FilterType;
+import io.harness.filter.mapper.FilterPropertiesMapper;
+import io.harness.gitops.GitopsResourceClientModule;
 import io.harness.gitsync.GitSyncConfigClientModule;
 import io.harness.gitsync.GitSyncModule;
 import io.harness.gitsync.common.events.FullSyncMessageListener;
@@ -129,6 +132,7 @@ import io.harness.ng.core.api.impl.NGSecretServiceV2Impl;
 import io.harness.ng.core.api.impl.TokenServiceImpl;
 import io.harness.ng.core.api.impl.UserGroupServiceImpl;
 import io.harness.ng.core.delegate.client.DelegateNgManagerCgManagerClientModule;
+import io.harness.ng.core.dto.filestore.mapper.FilesFilterPropertiesMapper;
 import io.harness.ng.core.encryptors.NGManagerKmsEncryptor;
 import io.harness.ng.core.encryptors.NGManagerVaultEncryptor;
 import io.harness.ng.core.entityactivity.event.EntityActivityCrudEventMessageListener;
@@ -145,6 +149,7 @@ import io.harness.ng.core.event.SecretEntityCRUDStreamListener;
 import io.harness.ng.core.event.UserGroupEntityCRUDStreamListener;
 import io.harness.ng.core.event.UserMembershipReconciliationMessageProcessor;
 import io.harness.ng.core.event.UserMembershipStreamListener;
+import io.harness.ng.core.event.gitops.ClusterCrudStreamListener;
 import io.harness.ng.core.globalkms.client.NgConnectorManagerClientModule;
 import io.harness.ng.core.globalkms.impl.NgGlobalKmsServiceImpl;
 import io.harness.ng.core.globalkms.services.NgGlobalKmsService;
@@ -253,8 +258,6 @@ import io.harness.timescaledb.metrics.HExecuteListener;
 import io.harness.token.TokenClientModule;
 import io.harness.tracing.AbstractPersistenceTracerModule;
 import io.harness.user.UserClientModule;
-import io.harness.utils.featureflaghelper.FeatureFlagHelperService;
-import io.harness.utils.featureflaghelper.NGFeatureFlagHelperServiceImpl;
 import io.harness.version.VersionModule;
 import io.harness.yaml.YamlSdkModule;
 import io.harness.yaml.core.StepSpecType;
@@ -613,6 +616,7 @@ public class NextGenModule extends AbstractModule {
         appConfig.getResourceGroupClientConfig().getSecret(), NG_MANAGER.getServiceId()));
     install(new NGFileServiceModule(appConfig.getFileServiceConfiguration().getFileStorageMode(),
         appConfig.getFileServiceConfiguration().getClusterName()));
+    install(new GitopsResourceClientModule(appConfig.getGitopsResourceClientConfig(), NG_MANAGER.getServiceId()));
     if (TRUE.equals(appConfig.getAccessControlAdminClientConfiguration().getMockAccessControlService())) {
       AccessControlAdminClientConfiguration accessControlAdminClientConfiguration =
           AccessControlAdminClientConfiguration.builder()
@@ -701,10 +705,13 @@ public class NextGenModule extends AbstractModule {
 
     registerEventsFrameworkMessageListeners();
     registerEncryptors();
-    bind(FeatureFlagHelperService.class).to(NGFeatureFlagHelperServiceImpl.class);
 
     bind(VariableService.class).to(VariableServiceImpl.class);
     bindExceptionHandlers();
+
+    MapBinder<String, FilterPropertiesMapper> filterPropertiesMapper =
+        MapBinder.newMapBinder(binder(), String.class, FilterPropertiesMapper.class);
+    filterPropertiesMapper.addBinding(FilterType.FILESTORE.toString()).to(FilesFilterPropertiesMapper.class);
   }
 
   private void bindExceptionHandlers() {
@@ -792,6 +799,10 @@ public class NextGenModule extends AbstractModule {
     bind(MessageListener.class)
         .annotatedWith(Names.named(EventsFrameworkMetadataConstants.USER_GROUP + ENTITY_CRUD))
         .to(UserGroupEntityCRUDStreamListener.class);
+    bind(MessageListener.class)
+        .annotatedWith(Names.named(EventsFrameworkMetadataConstants.GITOPS_CLUSTER_ENTITY + ENTITY_CRUD))
+        .to(ClusterCrudStreamListener.class);
+
     bind(MessageListener.class)
         .annotatedWith(Names.named(USER_SCOPE_RECONCILIATION))
         .to(UserMembershipReconciliationMessageProcessor.class);

@@ -15,18 +15,26 @@ import io.harness.cvng.notification.beans.NotificationRuleCondition;
 import io.harness.cvng.notification.beans.NotificationRuleConditionSpec;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.channelDetails.CVNGNotificationChannelType;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceNotificationRuleCondition;
+import io.harness.cvng.notification.utils.NotificationRuleCommonUtils;
 import io.harness.exception.InvalidArgumentsException;
 
+import com.google.inject.Inject;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MonitoredServiceNotificationRuleConditionTransformer
     extends NotificationRuleConditionTransformer<MonitoredServiceNotificationRule, NotificationRuleConditionSpec> {
+  @Inject
+  Map<CVNGNotificationChannelType, NotificationMethodTransformer>
+      notificationChannelTypeNotificationMethodTransformerMap;
+
   @Override
   public MonitoredServiceNotificationRule getEntity(
       ProjectParams projectParams, NotificationRuleDTO notificationRuleDTO) {
@@ -37,7 +45,9 @@ public class MonitoredServiceNotificationRuleConditionTransformer
         .identifier(notificationRuleDTO.getIdentifier())
         .name(notificationRuleDTO.getName())
         .type(NotificationRuleType.MONITORED_SERVICE)
-        .notificationMethod(notificationRuleDTO.getNotificationMethod())
+        .notificationMethod(notificationChannelTypeNotificationMethodTransformerMap
+                                .get(notificationRuleDTO.getNotificationMethod().getType())
+                                .getEntityNotificationMethod(notificationRuleDTO.getNotificationMethod().getSpec()))
         .conditions(notificationRuleDTO.getConditions()
                         .stream()
                         .map(condition -> getEntityCondition(condition))
@@ -60,13 +70,13 @@ public class MonitoredServiceNotificationRuleConditionTransformer
         return MonitoredServiceChangeImpactCondition.builder()
             .changeEventTypes(changeImpactConditionSpec.getChangeEventTypes())
             .threshold(changeImpactConditionSpec.getThreshold())
-            .period(changeImpactConditionSpec.getPeriod())
+            .period(NotificationRuleCommonUtils.getDurationInMillis(changeImpactConditionSpec.getPeriod()))
             .build();
       case HEALTH_SCORE:
         HealthScoreConditionSpec healthScoreConditionSpec = (HealthScoreConditionSpec) condition.getSpec();
         return MonitoredServiceHealthScoreCondition.builder()
             .threshold(healthScoreConditionSpec.getThreshold())
-            .period(healthScoreConditionSpec.getPeriod())
+            .period(NotificationRuleCommonUtils.getDurationInMillis(healthScoreConditionSpec.getPeriod()))
             .build();
       case CHANGE_OBSERVED:
         ChangeObservedConditionSpec changeObservedConditionSpec = (ChangeObservedConditionSpec) condition.getSpec();
@@ -86,13 +96,13 @@ public class MonitoredServiceNotificationRuleConditionTransformer
         return ChangeImpactConditionSpec.builder()
             .changeEventTypes(changeImpactCondition.getChangeEventTypes())
             .threshold(changeImpactCondition.getThreshold())
-            .period(changeImpactCondition.getPeriod())
+            .period(NotificationRuleCommonUtils.getDurationAsString(changeImpactCondition.getPeriod()))
             .build();
       case HEALTH_SCORE:
         MonitoredServiceHealthScoreCondition healthScoreCondition = (MonitoredServiceHealthScoreCondition) condition;
         return HealthScoreConditionSpec.builder()
             .threshold(healthScoreCondition.getThreshold())
-            .period(healthScoreCondition.getPeriod())
+            .period(NotificationRuleCommonUtils.getDurationAsString(healthScoreCondition.getPeriod()))
             .build();
       case CHANGE_OBSERVED:
         MonitoredServiceChangeObservedCondition changeObservedCondition =

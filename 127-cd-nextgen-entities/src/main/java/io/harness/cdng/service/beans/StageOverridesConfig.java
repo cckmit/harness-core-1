@@ -11,12 +11,11 @@ import static io.harness.annotations.dev.HarnessTeam.CDC;
 
 import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.OwnedBy;
-import io.harness.beans.SwaggerConstants;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
 import io.harness.cdng.visitor.helpers.serviceconfig.StageOverridesVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
-import io.harness.pms.yaml.ParameterField;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
@@ -37,16 +36,9 @@ import org.springframework.data.annotation.TypeAlias;
 @OwnedBy(CDC)
 public class StageOverridesConfig implements Visitable {
   List<NGVariable> variables;
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> useVariableOverrideSets;
-
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> useArtifactOverrideSets;
   ArtifactListConfig artifacts;
-
-  @ApiModelProperty(dataType = SwaggerConstants.STRING_LIST_CLASSPATH)
-  ParameterField<List<String>> useManifestOverrideSets;
   List<ManifestConfigWrapper> manifests;
+  List<ConfigFileWrapper> configFiles;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -62,6 +54,11 @@ public class StageOverridesConfig implements Visitable {
     if (EmptyPredicate.isNotEmpty(manifests)) {
       manifests.forEach(manifest -> children.add("manifests", manifest));
     }
+
+    if (EmptyPredicate.isNotEmpty(configFiles)) {
+      configFiles.forEach(manifest -> children.add("configFiles", configFiles));
+    }
+
     return children;
   }
 }

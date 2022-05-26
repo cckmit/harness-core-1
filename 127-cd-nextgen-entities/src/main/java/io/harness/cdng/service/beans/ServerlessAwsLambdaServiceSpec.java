@@ -11,11 +11,9 @@ import io.harness.annotation.RecasterAlias;
 import io.harness.annotations.dev.HarnessTeam;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.cdng.artifact.bean.yaml.ArtifactListConfig;
-import io.harness.cdng.artifact.bean.yaml.ArtifactOverrideSetWrapper;
+import io.harness.cdng.configfile.ConfigFileWrapper;
 import io.harness.cdng.manifest.yaml.ManifestConfigWrapper;
-import io.harness.cdng.manifest.yaml.ManifestOverrideSetWrapper;
 import io.harness.cdng.service.ServiceSpec;
-import io.harness.cdng.variables.beans.NGVariableOverrideSetWrapper;
 import io.harness.cdng.visitor.helpers.serviceconfig.ServerlessAwsLambdaServiceSpecVisitorHelper;
 import io.harness.data.structure.EmptyPredicate;
 import io.harness.ng.core.k8s.ServiceSpecType;
@@ -23,7 +21,6 @@ import io.harness.pms.yaml.YamlNode;
 import io.harness.walktree.beans.VisitableChildren;
 import io.harness.walktree.visitor.SimpleVisitorHelper;
 import io.harness.walktree.visitor.Visitable;
-import io.harness.yaml.core.VariableExpression;
 import io.harness.yaml.core.variables.NGVariable;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -50,10 +47,7 @@ public class ServerlessAwsLambdaServiceSpec implements ServiceSpec, Visitable {
   List<NGVariable> variables;
   ArtifactListConfig artifacts;
   List<ManifestConfigWrapper> manifests;
-
-  @VariableExpression(skipVariableExpression = true) List<NGVariableOverrideSetWrapper> variableOverrideSets;
-  @VariableExpression(skipVariableExpression = true) List<ArtifactOverrideSetWrapper> artifactOverrideSets;
-  @VariableExpression(skipVariableExpression = true) List<ManifestOverrideSetWrapper> manifestOverrideSets;
+  List<ConfigFileWrapper> configFiles;
 
   // For Visitor Framework Impl
   @Getter(onMethod_ = { @ApiModelProperty(hidden = true) }) @ApiModelProperty(hidden = true) String metadata;
@@ -71,15 +65,14 @@ public class ServerlessAwsLambdaServiceSpec implements ServiceSpec, Visitable {
     }
 
     children.add("artifacts", artifacts);
-    if (EmptyPredicate.isNotEmpty(artifactOverrideSets)) {
-      artifactOverrideSets.forEach(artifactOverrideSet -> children.add("artifactOverrideSets", artifactOverrideSet));
-    }
     if (EmptyPredicate.isNotEmpty(manifests)) {
       manifests.forEach(manifest -> children.add("manifests", manifest));
     }
-    if (EmptyPredicate.isNotEmpty(manifestOverrideSets)) {
-      manifestOverrideSets.forEach(manifestOverrideSet -> children.add("manifestOverrideSets", manifestOverrideSet));
+
+    if (EmptyPredicate.isNotEmpty(configFiles)) {
+      configFiles.forEach(configFile -> children.add("configFiles", configFile));
     }
+
     return children;
   }
 }

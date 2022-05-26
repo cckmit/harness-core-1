@@ -62,7 +62,8 @@ public class FileDTOMapper {
           .type(ngFile.getType())
           .parentIdentifier(ngFile.getParentIdentifier())
           .createdBy(fromEmbeddedUser(ngFile.getCreatedBy()))
-          .lastUpdatedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
+          .lastModifiedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
+          .lastModifiedAt(ngFile.getLastModifiedAt())
           .build();
     }
 
@@ -80,7 +81,8 @@ public class FileDTOMapper {
         .mimeType(ngFile.getMimeType())
         .draft(ngFile.getDraft())
         .createdBy(fromEmbeddedUser(ngFile.getCreatedBy()))
-        .lastUpdatedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
+        .lastModifiedBy(fromEmbeddedUser(ngFile.getLastUpdatedBy()))
+        .lastModifiedAt(ngFile.getLastModifiedAt())
         .build();
   }
 

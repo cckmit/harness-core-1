@@ -85,6 +85,7 @@ import software.wings.sm.ExecutionResponse;
 import software.wings.sm.ExecutionResponse.ExecutionResponseBuilder;
 import software.wings.sm.State;
 import software.wings.sm.WorkflowStandardParams;
+import software.wings.sm.WorkflowStandardParamsExtensionService;
 import software.wings.sm.states.ManagerExecutionLogCallback;
 import software.wings.stencils.DefaultValue;
 
@@ -123,6 +124,7 @@ public abstract class CloudFormationState extends State {
   @Inject protected transient WingsPersistence wingsPersistence;
   @Inject protected SweepingOutputService sweepingOutputService;
   @Inject protected FeatureFlagService featureFlagService;
+  @Inject private WorkflowStandardParamsExtensionService workflowStandardParamsExtensionService;
 
   @FieldNameConstants.Include @Attributes(title = "Provisioner") @Getter @Setter protected String provisionerId;
   @Attributes(title = "Region")
@@ -143,7 +145,7 @@ public abstract class CloudFormationState extends State {
   public CloudFormationState(String name, String stateType) {
     super(name, stateType);
   }
-  protected abstract List<String> commandUnits();
+  protected abstract List<String> commandUnits(CloudFormationInfrastructureProvisioner provisioner);
   protected abstract String mainCommandUnit();
   protected abstract ExecutionResponse buildAndQueueDelegateTask(ExecutionContextImpl executionContext,
       CloudFormationInfrastructureProvisioner provisioner, AwsConfig awsConfig, String activityId);
@@ -289,10 +291,13 @@ public abstract class CloudFormationState extends State {
             .commandType(getStateType())
             .workflowExecutionId(executionContext.getWorkflowExecutionId())
             .workflowId(executionContext.getWorkflowId())
-            .commandUnits(commandUnits()
-                              .stream()
-                              .map(s -> Builder.aCommand().withName(s).withCommandType(CommandType.OTHER).build())
-                              .collect(Collectors.toList()))
+            .commandUnits(
+                commandUnits(infrastructureProvisionerService.get(executionContext.getAppId(), provisionerId) != null
+                        ? getProvisioner(executionContext)
+                        : null)
+                    .stream()
+                    .map(s -> Builder.aCommand().withName(s).withCommandType(CommandType.OTHER).build())
+                    .collect(Collectors.toList()))
             .status(ExecutionStatus.RUNNING)
             .triggeredBy(TriggeredBy.builder()
                              .email(workflowStandardParams.getCurrentUser().getEmail())
@@ -365,7 +370,7 @@ public abstract class CloudFormationState extends State {
       return getNormalizedId(provisionerId);
     }
     WorkflowStandardParams workflowStandardParams = executionContext.fetchWorkflowStandardParamsFromContext();
-    Environment env = workflowStandardParams.fetchRequiredEnv();
+    Environment env = workflowStandardParamsExtensionService.fetchRequiredEnv(workflowStandardParams);
     return getNormalizedId(env.getUuid()) + getNormalizedId(provisionerId);
   }
 

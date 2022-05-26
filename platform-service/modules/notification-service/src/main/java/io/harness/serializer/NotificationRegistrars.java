@@ -30,11 +30,12 @@ public class NotificationRegistrars {
           .add(NotificationDelegateTasksKryoRegistrar.class)
           .add(DelegateTasksBeansKryoRegister.class)
           .add(NotificationBeansKryoRegistrar.class)
-          .addAll(ProjectAndOrgRegistrars.kryoRegistrars)
-          .addAll(WaitEngineRegistrars.kryoRegistrars)
+          .addAll(io.harness.serializer.ProjectAndOrgRegistrars.kryoRegistrars)
+          .addAll(io.harness.serializer.WaitEngineRegistrars.kryoRegistrars)
           .addAll(SMCoreRegistrars.kryoRegistrars)
-          .addAll(ApiServiceBeansRegistrars.kryoRegistrars)
+          .addAll(io.harness.serializer.ApiServiceBeansRegistrars.kryoRegistrars)
           .addAll(AccessControlClientRegistrars.kryoRegistrars)
+          .addAll(CvNextGenBeansRegistrars.kryoRegistrars)
           .add(NGCoreKryoRegistrar.class)
           .add(DelegateTasksKryoRegistrar.class)
           .add(DelegateServiceBeansKryoRegistrar.class)
@@ -47,7 +48,7 @@ public class NotificationRegistrars {
           .addAll(DelegateServiceDriverRegistrars.morphiaRegistrars)
           .addAll(NGCoreClientRegistrars.morphiaRegistrars)
           .addAll(SMCoreRegistrars.morphiaRegistrars)
-          .addAll(DelegateTaskRegistrars.morphiaRegistrars)
+          .addAll(io.harness.serializer.DelegateTaskRegistrars.morphiaRegistrars)
           .build();
 
   public static final ImmutableSet<Class<? extends TypeConverter>> morphiaConverters =

@@ -12,6 +12,7 @@ import static io.harness.annotations.dev.HarnessTeam.CE;
 import io.harness.annotation.StoreIn;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.mongo.index.CompoundMongoIndex;
+import io.harness.mongo.index.FdTtlIndex;
 import io.harness.mongo.index.MongoIndex;
 import io.harness.mongo.index.SortCompoundMongoIndex;
 import io.harness.ng.DbAliases;
@@ -22,6 +23,7 @@ import io.harness.persistence.UpdatedAtAware;
 import io.harness.persistence.UuidAware;
 
 import com.google.common.collect.ImmutableList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -118,6 +120,8 @@ public final class K8sWorkload implements PersistentEntity, UuidAware, CreatedAt
   @NotEmpty String uid;
   @NotEmpty String kind;
   Map<String, String> labels;
+
+  @FdTtlIndex private Date ttl;
 
   // Mongo has problems for values having dot/period ('.') character. We replace dot with tilde
   // which is not an allowed k8s label character.
