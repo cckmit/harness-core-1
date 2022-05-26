@@ -19,16 +19,13 @@ import io.harness.walktree.visitor.utilities.VisitorParentPathUtils;
 public interface YamlTypes {
   String PRIMARY_ARTIFACT = "primary";
   String ARTIFACT_LIST_CONFIG = "artifacts";
-  String ARTIFACT_OVERRIDE_SETS = "artifactOverrideSets";
   String SIDECAR_ARTIFACT_CONFIG = "sidecar";
   String SIDECARS_ARTIFACT_CONFIG = "sidecars";
   String ENVIRONMENT_YAML = "environment";
   String ENVIRONMENT_REF = "environmentRef";
   String INFRASTRUCTURE_DEF = "infrastructureDefinition";
   String INFRASTRUCTURE_STEP_PARAMETERS = "infrastructureStepParameters";
-  String INFRA_USE_FROM_STAGE = "useFromStage";
-  String INFRA_USE_FROM_STAGE_OVERRIDES = "overrides";
-  String OVERRIDE_SET = "overrideSet";
+  String ENVIRONMENT_NODE_ID = "environmentNodeId";
 
   String K8S_ROLLING_ROLLBACK = StepSpecTypeConstants.K8S_ROLLING_ROLLBACK;
   String K8S_ROLLING_DEPLOY = StepSpecTypeConstants.K8S_ROLLING_DEPLOY;
@@ -48,7 +45,6 @@ public interface YamlTypes {
 
   String MANIFEST_LIST_CONFIG = "manifests";
   String MANIFEST_CONFIG = "manifest";
-  String MANIFEST_OVERRIDE_SETS = "manifestOverrideSets";
   String K8S_MANIFEST = ManifestType.K8Manifest;
   String HELM_CHART_MANIFEST = ManifestType.HelmChart;
   String KUSTOMIZE_MANIFEST = ManifestType.Kustomize;
@@ -56,12 +52,11 @@ public interface YamlTypes {
   String SPEC = "spec";
   String PIPELINE_INFRASTRUCTURE = "infrastructure";
   String SERVICE_CONFIG = "serviceConfig";
+  String SERVICE_SECTION = "serviceSection";
   String SERVICE_ENTITY = "service";
   String SERVICE_REF = "serviceRef";
   String SERVICE_DEFINITION = "serviceDefinition";
   String SERVICE_SPEC = "spec";
-  String SERVICE_USE_FROM_STAGE = "useFromStage";
-  String SERVICE_USE_FROM_STAGE_OVERRIDES = "overrides";
   String STAGE_OVERRIDES_CONFIG = "stageOverrides";
   String PATH_CONNECTOR = VisitorParentPathUtils.PATH_CONNECTOR;
   String CONNECTOR_REF = "connectorRef";
@@ -74,6 +69,8 @@ public interface YamlTypes {
   String RELEASE_NAME = "releaseName";
   String CLUSTER = "cluster";
   String STORE_CONFIG_WRAPPER = "store";
+  String CONFIG_FILES = "configFiles";
+  String CONFIG_FILE = "configFile";
 
   String SKIP_DRY_RUN = "skipDryRun";
   String OUTPUT = "output";

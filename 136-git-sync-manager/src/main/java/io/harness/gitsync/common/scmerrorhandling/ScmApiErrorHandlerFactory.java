@@ -45,8 +45,6 @@ class ScmApiErrorHandlerFactory {
       ImmutableMap.<Pair<ScmApis, RepoProviders>, Class<? extends ScmApiErrorHandler>>builder()
           .put(Pair.of(ScmApis.LIST_REPOSITORIES, RepoProviders.BITBUCKET), BitbucketListRepoScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.LIST_REPOSITORIES, RepoProviders.GITHUB), GithubListRepoScmApiErrorHandler.class)
-          .put(Pair.of(ScmApis.LIST_BRANCHES, RepoProviders.BITBUCKET), BitbucketListBranchesScmApiErrorHandler.class)
-          .put(Pair.of(ScmApis.LIST_BRANCHES, RepoProviders.GITHUB), GithubListBranchesScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.GET_FILE, RepoProviders.BITBUCKET), BitbucketGetFileScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.GET_FILE, RepoProviders.GITHUB), GithubGetFileScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.CREATE_PULL_REQUEST, RepoProviders.BITBUCKET),
@@ -59,6 +57,8 @@ class ScmApiErrorHandlerFactory {
           .put(Pair.of(ScmApis.UPDATE_FILE, RepoProviders.GITHUB), GithubUpdateFileScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.CREATE_BRANCH, RepoProviders.BITBUCKET), BitbucketCreateBranchScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.CREATE_BRANCH, RepoProviders.GITHUB), GithubCreateBranchScmApiErrorHandler.class)
+          .put(Pair.of(ScmApis.LIST_BRANCHES, RepoProviders.BITBUCKET), BitbucketListBranchesScmApiErrorHandler.class)
+          .put(Pair.of(ScmApis.LIST_BRANCHES, RepoProviders.GITHUB), GithubListBranchesScmApiErrorHandler.class)
           .put(Pair.of(ScmApis.GET_DEFAULT_BRANCH, RepoProviders.BITBUCKET),
               BitbucketGetDefaultBranchScmApiErrorHandler.class)
           .put(

@@ -8,29 +8,35 @@
 package io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket;
 
 import static io.harness.annotations.dev.HarnessTeam.PL;
-import static io.harness.eraro.ErrorCode.UNEXPECTED;
+import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.ScmErrorExplanations.INVALID_CONNECTOR_CREDS;
+import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.ScmErrorHints.INVALID_CREDENTIALS;
+import static io.harness.gitsync.common.scmerrorhandling.handlers.bitbucket.ScmErrorHints.REPO_NOT_FOUND;
 
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.exception.NestedExceptionUtils;
-import io.harness.exception.SCMExceptionExplanations;
-import io.harness.exception.SCMExceptionHints;
-import io.harness.exception.ScmException;
+import io.harness.exception.ScmBadRequestException;
 import io.harness.exception.ScmUnauthorizedException;
+import io.harness.exception.ScmUnexpectedException;
 import io.harness.exception.WingsException;
 import io.harness.gitsync.common.scmerrorhandling.handlers.ScmApiErrorHandler;
 
 @OwnedBy(PL)
 public class BitbucketCreateFileScmApiErrorHandler implements ScmApiErrorHandler {
+  public static final String CREATE_FILE_REQUEST_FAILURE = "The requested file couldn't be created in Bitbucket. ";
+
   @Override
   public void handleError(int statusCode, String errorMessage) throws WingsException {
     switch (statusCode) {
       case 401:
       case 403:
-        throw NestedExceptionUtils.hintWithExplanationException(SCMExceptionHints.BITBUCKET_INVALID_CREDENTIALS,
-            SCMExceptionExplanations.CREATE_PULL_REQUEST_WITH_INVALID_CREDS,
-            new ScmUnauthorizedException(errorMessage));
+        throw NestedExceptionUtils.hintWithExplanationException(INVALID_CREDENTIALS,
+            CREATE_FILE_REQUEST_FAILURE + INVALID_CONNECTOR_CREDS, new ScmUnauthorizedException(errorMessage));
+      case 404:
+        throw NestedExceptionUtils.hintWithExplanationException(REPO_NOT_FOUND,
+            CREATE_FILE_REQUEST_FAILURE + ScmErrorExplanations.REPO_NOT_FOUND,
+            new ScmBadRequestException(errorMessage));
       default:
-        throw new ScmException(UNEXPECTED);
+        throw new ScmUnexpectedException(errorMessage);
     }
   }
 }

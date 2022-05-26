@@ -25,14 +25,17 @@ import static org.apache.commons.lang3.RandomStringUtils.randomAlphanumeric;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import io.harness.CvNextGenTestBase;
 import io.harness.category.element.UnitTests;
 import io.harness.cvng.BuilderFactory;
 import io.harness.cvng.CVNGTestConstants;
+import io.harness.cvng.activity.entities.Activity;
+import io.harness.cvng.activity.services.api.ActivityService;
 import io.harness.cvng.analysis.beans.Risk;
 import io.harness.cvng.beans.CVMonitoringCategory;
 import io.harness.cvng.beans.DataSourceType;
@@ -47,6 +50,7 @@ import io.harness.cvng.beans.cvnglog.CVNGLogType;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO;
 import io.harness.cvng.beans.cvnglog.ExecutionLogDTO.LogLevel;
 import io.harness.cvng.beans.cvnglog.TraceableType;
+import io.harness.cvng.client.FakeNotificationClient;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.DeploymentVerificationDTO;
 import io.harness.cvng.core.beans.HealthSourceMetricDefinition.AnalysisDTO.LiveMonitoringDTO;
@@ -97,15 +101,20 @@ import io.harness.cvng.core.services.api.monitoredService.MonitoredServiceServic
 import io.harness.cvng.core.services.api.monitoredService.ServiceDependencyService;
 import io.harness.cvng.core.services.impl.ChangeSourceUpdateHandler;
 import io.harness.cvng.core.services.impl.PagerdutyChangeSourceUpdateHandler;
-import io.harness.cvng.core.utils.template.TemplateFacade;
 import io.harness.cvng.dashboard.entities.HeatMap;
 import io.harness.cvng.dashboard.entities.HeatMap.HeatMapRisk;
 import io.harness.cvng.dashboard.services.api.HeatMapService;
 import io.harness.cvng.models.VerificationType;
+import io.harness.cvng.notification.beans.ChangeObservedConditionSpec;
+import io.harness.cvng.notification.beans.MonitoredServiceChangeEventType;
+import io.harness.cvng.notification.beans.NotificationRuleCondition;
+import io.harness.cvng.notification.beans.NotificationRuleConditionType;
 import io.harness.cvng.notification.beans.NotificationRuleDTO;
 import io.harness.cvng.notification.beans.NotificationRuleRefDTO;
 import io.harness.cvng.notification.beans.NotificationRuleResponse;
 import io.harness.cvng.notification.beans.NotificationRuleType;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeImpactCondition;
+import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceChangeObservedCondition;
 import io.harness.cvng.notification.entities.MonitoredServiceNotificationRule.MonitoredServiceHealthScoreCondition;
 import io.harness.cvng.notification.services.api.NotificationRuleService;
 import io.harness.cvng.servicelevelobjective.beans.ErrorBudgetRisk;
@@ -114,9 +123,11 @@ import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelIndicatorS
 import io.harness.cvng.servicelevelobjective.services.api.ServiceLevelObjectiveService;
 import io.harness.exception.DuplicateFieldException;
 import io.harness.exception.InvalidRequestException;
+import io.harness.lock.PersistentLocker;
 import io.harness.ng.beans.PageResponse;
 import io.harness.ng.core.environment.dto.EnvironmentResponse;
 import io.harness.ng.core.mapper.TagMapper;
+import io.harness.notification.notificationclient.NotificationResultWithoutStatus;
 import io.harness.persistence.HPersistence;
 import io.harness.rule.Owner;
 
@@ -139,6 +150,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.AccessLevel;
+import lombok.SneakyThrows;
 import lombok.experimental.FieldDefaults;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.Before;
@@ -161,9 +173,11 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Inject CVNGLogService cvngLogService;
   @Inject VerificationTaskService verificationTaskService;
   @Inject NotificationRuleService notificationRuleService;
-  @Inject TemplateFacade templateFacade;
+  @Inject private ActivityService activityService;
   @Mock SetupUsageEventService setupUsageEventService;
   @Mock ChangeSourceService changeSourceServiceMock;
+  @Mock FakeNotificationClient notificationClient;
+  @Mock private PersistentLocker mockedPersistentLocker;
 
   private BuilderFactory builderFactory;
   String healthSourceName;
@@ -229,6 +243,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     FieldUtils.writeField(monitoredServiceService, "changeSourceService", changeSourceService, true);
     FieldUtils.writeField(heatMapService, "clock", clock, true);
     FieldUtils.writeField(monitoredServiceService, "heatMapService", heatMapService, true);
+    FieldUtils.writeField(monitoredServiceService, "notificationClient", notificationClient, true);
   }
 
   @Test
@@ -285,6 +300,9 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testCreateFromYaml() {
     String yaml = "monitoredService:\n"
+        + "  template:\n"
+        + "   templateRef: templateRef123\n"
+        + "   versionLabel: versionLabel123\n"
         + "  type: Application\n"
         + "  description: description\n"
         + "  identifier: <+monitoredService.serviceRef>\n"
@@ -299,7 +317,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         + "    -   name: environmentIdentifier\n"
         + "        type: String\n"
         + "        value: env3";
-    when(templateFacade.resolveYaml(any(), eq(yaml))).thenReturn(yaml);
     MonitoredServiceResponse monitoredServiceResponse =
         monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml);
     MonitoredServiceResponse monitoredServiceResponseFromDb =
@@ -307,6 +324,10 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(monitoredServiceResponse.getMonitoredServiceDTO()).isNotNull();
     assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getName()).isEqualTo("service1");
     assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getEnvironmentRef()).isEqualTo("env3");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getTemplateRef())
+        .isEqualTo("templateRef123");
+    assertThat(monitoredServiceResponse.getMonitoredServiceDTO().getTemplate().getVersionLabel())
+        .isEqualTo("versionLabel123");
   }
 
   @Test
@@ -325,7 +346,6 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
         + "  sources:\n"
         + "    healthSources:\n"
         + "    changeSources: \n";
-    when(templateFacade.resolveYaml(any(), eq(yaml))).thenReturn(yaml);
     assertThatThrownBy(() -> monitoredServiceService.createFromYaml(builderFactory.getProjectParams(), yaml))
         .hasMessage("Infinite loop in variable interpretation");
   }
@@ -404,20 +424,15 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Category(UnitTests.class)
   public void testCreate_monitoredServiceHealthSourcesConfigAlreadyPresent() {
     CVConfig cvConfig =
-        AppDynamicsCVConfig.builder()
+        builderFactory.appDynamicsCVConfigBuilder()
             .identifier(HealthSourceService.getNameSpacedIdentifier(monitoredServiceIdentifier, healthSourceIdentifier))
             .accountId(accountId)
             .orgIdentifier(orgIdentifier)
             .projectIdentifier(projectIdentifier)
             .connectorIdentifier(connectorIdentifier)
-            .serviceIdentifier(serviceIdentifier)
-            .envIdentifier(environmentIdentifier)
             .monitoringSourceName(healthSourceName)
             .productName(feature)
             .category(CVMonitoringCategory.ERRORS)
-            .applicationName(applicationName)
-            .tierName(appTierName)
-            .metricPack(MetricPack.builder().build())
             .build();
     cvConfigService.save(cvConfig);
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTO();
@@ -555,10 +570,11 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                                                                        .category(CVMonitoringCategory.ERRORS)
                                                                        .metricType(TimeSeriesMetricType.INFRA)
                                                                        .build())
-                                                      .deploymentVerification(DeploymentVerificationDTO.builder()
-                                                                                  .enabled(true)
-                                                                                  .serviceInstanceMetricPath("path")
-                                                                                  .build())
+                                                      .deploymentVerification(
+                                                          DeploymentVerificationDTO.builder()
+                                                              .enabled(true)
+                                                              .serviceInstanceMetricPath("Individual Nodes|*|path")
+                                                              .build())
                                                       .liveMonitoring(LiveMonitoringDTO.builder().enabled(true).build())
                                                       .build())
                                               .build()))
@@ -613,10 +629,11 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                                                                        .category(CVMonitoringCategory.ERRORS)
                                                                        .metricType(TimeSeriesMetricType.INFRA)
                                                                        .build())
-                                                      .deploymentVerification(DeploymentVerificationDTO.builder()
-                                                                                  .enabled(true)
-                                                                                  .serviceInstanceMetricPath("path")
-                                                                                  .build())
+                                                      .deploymentVerification(
+                                                          DeploymentVerificationDTO.builder()
+                                                              .enabled(true)
+                                                              .serviceInstanceMetricPath("|Individual Nodes|*|path")
+                                                              .build())
                                                       .liveMonitoring(LiveMonitoringDTO.builder().enabled(true).build())
                                                       .build())
                                               .build()))
@@ -2128,13 +2145,12 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
   @Test
   @Owner(developers = KAPIL)
   @Category(UnitTests.class)
-  public void testShouldSendNotification() {
+  public void testGetNotificationRules_withCoolOffLogic() {
     NotificationRuleDTO notificationRuleDTO =
         builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
     NotificationRuleResponse notificationRuleResponse =
         notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
 
-    Instant endTime = roundDownTo5MinBoundary(clock.instant());
     MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
         "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
     monitoredServiceDTO.setNotificationRuleRefs(
@@ -2143,7 +2159,255 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                           .enabled(true)
                           .build()));
     monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
 
+    assertThat(((MonitoredServiceServiceImpl) monitoredServiceService).getNotificationRules(monitoredService).size())
+        .isEqualTo(1);
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testSendNotification() throws IllegalAccessException {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    notificationRuleDTO.setName("rule2");
+    notificationRuleDTO.setIdentifier("rule2");
+    notificationRuleDTO.setConditions(
+        Arrays.asList(NotificationRuleCondition.builder()
+                          .type(NotificationRuleConditionType.CHANGE_OBSERVED)
+                          .spec(ChangeObservedConditionSpec.builder()
+                                    .changeEventTypes(Arrays.asList(MonitoredServiceChangeEventType.DEPLOYMENT))
+                                    .build())
+                          .build()));
+    NotificationRuleResponse notificationRuleResponseTwo =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build(),
+            NotificationRuleRefDTO.builder()
+                .notificationRuleRef(notificationRuleResponseTwo.getNotificationRule().getIdentifier())
+                .enabled(true)
+                .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    createHeatMaps(monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+
+    clock = Clock.fixed(clock.instant().plus(1, ChronoUnit.HOURS), ZoneOffset.UTC);
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    when(notificationClient.sendNotificationAsync(any()))
+        .thenReturn(NotificationResultWithoutStatus.builder().notificationId("notificationId").build());
+
+    monitoredServiceService.sendNotification(monitoredService);
+    verify(notificationClient, times(1)).sendNotificationAsync(any());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testShouldSendNotification_withHealthScoreCondition() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+    createHeatMaps(monitoredServiceDTO);
+
+    MonitoredServiceHealthScoreCondition condition =
+        MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
+    assertThat(
+        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testShouldSendNotification_withHealthScoreCondition_withNoData() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+
+    MonitoredServiceHealthScoreCondition condition =
+        MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
+    assertThat(
+        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testShouldSendNotification_withChangeObservedCondition() throws IllegalAccessException {
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+    createActivity(monitoredServiceDTO);
+
+    MonitoredServiceChangeObservedCondition condition =
+        MonitoredServiceChangeObservedCondition.builder()
+            .changeEventTypes(Arrays.asList(MonitoredServiceChangeEventType.DEPLOYMENT))
+            .build();
+
+    assertThat(
+        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+        .isTrue();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testShouldSendNotification_withChangeImpactCondition() throws IllegalAccessException {
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
+    createHeatMaps(monitoredServiceDTO);
+    createActivity(monitoredServiceDTO);
+
+    MonitoredServiceChangeImpactCondition condition =
+        MonitoredServiceChangeImpactCondition.builder()
+            .changeEventTypes(Arrays.asList(MonitoredServiceChangeEventType.DEPLOYMENT))
+            .threshold(20.0)
+            .period(600000)
+            .build();
+    assertThat(
+        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+        .isTrue();
+
+    clock = Clock.fixed(clock.instant().plus(10, ChronoUnit.MINUTES), ZoneOffset.UTC);
+    FieldUtils.writeField(monitoredServiceService, "clock", clock, true);
+    assertThat(
+        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
+        .isFalse();
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testGetNotificationRules() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.MONITORED_SERVICE).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    PageResponse<NotificationRuleResponse> notificationRuleResponsePageResponse =
+        monitoredServiceService.getNotificationRules(
+            projectParams, monitoredServiceDTO.getIdentifier(), PageParams.builder().page(0).size(10).build());
+    assertThat(notificationRuleResponsePageResponse.getTotalPages()).isEqualTo(1);
+    assertThat(notificationRuleResponsePageResponse.getTotalItems()).isEqualTo(1);
+    assertThat(notificationRuleResponsePageResponse.getContent().get(0).isEnabled()).isTrue();
+    assertThat(notificationRuleResponsePageResponse.getContent().get(0).getNotificationRule().getIdentifier())
+        .isEqualTo(notificationRuleDTO.getIdentifier());
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testBeforeNotificationRuleDelete() {
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder().notificationRuleRef("rule1").enabled(true).build(),
+            NotificationRuleRefDTO.builder().notificationRuleRef("rule2").enabled(true).build(),
+            NotificationRuleRefDTO.builder().notificationRuleRef("rule3").enabled(true).build()));
+    monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO);
+    assertThatThrownBy(()
+                           -> monitoredServiceService.beforeNotificationRuleDelete(
+                               builderFactory.getContext().getProjectParams(), "rule1"))
+        .hasMessage("Deleting notification rule is used in Monitored Services, "
+            + "Please delete the notification rule inside Monitored Services before deleting notification rule. Monitored Services : service_1_local");
+  }
+
+  @Test
+  @Owner(developers = KAPIL)
+  @Category(UnitTests.class)
+  public void testCreate_withIncorrectNotificationRule() {
+    NotificationRuleDTO notificationRuleDTO =
+        builderFactory.getNotificationRuleDTOBuilder(NotificationRuleType.SLO).build();
+    NotificationRuleResponse notificationRuleResponse =
+        notificationRuleService.create(builderFactory.getContext().getProjectParams(), notificationRuleDTO);
+
+    MonitoredServiceDTO monitoredServiceDTO = createMonitoredServiceDTOWithCustomDependencies(
+        "service_1_local", environmentParams.getServiceIdentifier(), Sets.newHashSet());
+    monitoredServiceDTO.setNotificationRuleRefs(
+        Arrays.asList(NotificationRuleRefDTO.builder()
+                          .notificationRuleRef(notificationRuleResponse.getNotificationRule().getIdentifier())
+                          .enabled(true)
+                          .build()));
+    assertThatThrownBy(
+        () -> monitoredServiceService.create(builderFactory.getContext().getAccountId(), monitoredServiceDTO))
+        .hasMessage("NotificationRule with identifier rule is of type SLO and cannot be added into MONITORED_SERVICE");
+  }
+
+  private void createActivity(MonitoredServiceDTO monitoredServiceDTO) {
+    useMockedPersistentLocker();
+    Activity activity = builderFactory.getDeploymentActivityBuilder()
+                            .monitoredServiceIdentifier(monitoredServiceDTO.getIdentifier())
+                            .activityStartTime(clock.instant().minus(5, ChronoUnit.MINUTES))
+                            .build();
+    activityService.upsert(activity);
+  }
+
+  private void createHeatMaps(MonitoredServiceDTO monitoredServiceDTO) {
+    Instant endTime = roundDownTo5MinBoundary(clock.instant());
     HeatMap msOneHeatMap = builderFactory.heatMapBuilder()
                                .monitoredServiceIdentifier(monitoredServiceIdentifier)
                                .heatMapResolution(FIVE_MIN)
@@ -2157,13 +2421,11 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
                        .build();
     setStartTimeEndTimeAndRiskScoreWith5MinBucket(msOneHeatMap, endTime, 0.85, 0.85);
     hPersistence.save(msOneHeatMap);
+  }
 
-    MonitoredService monitoredService = getMonitoredService(monitoredServiceDTO.getIdentifier());
-    MonitoredServiceHealthScoreCondition condition =
-        MonitoredServiceHealthScoreCondition.builder().threshold(20.0).period(600000).build();
-    assertThat(
-        ((MonitoredServiceServiceImpl) monitoredServiceService).shouldSendNotification(monitoredService, condition))
-        .isTrue();
+  @SneakyThrows
+  private void useMockedPersistentLocker() {
+    FieldUtils.writeField(activityService, "persistentLocker", mockedPersistentLocker, true);
   }
 
   private void setStartTimeEndTimeAndRiskScoreWith5MinBucket(
@@ -2218,8 +2480,7 @@ public class MonitoredServiceServiceImplTest extends CvNextGenTestBase {
     assertThat(cvConfig.getAccountId()).isEqualTo(accountId);
     assertThat(cvConfig.getOrgIdentifier()).isEqualTo(orgIdentifier);
     assertThat(cvConfig.getProjectIdentifier()).isEqualTo(projectIdentifier);
-    assertThat(cvConfig.getEnvIdentifier()).isEqualTo(environmentIdentifier);
-    assertThat(cvConfig.getServiceIdentifier()).isEqualTo(serviceIdentifier);
+    assertThat(cvConfig.getMonitoredServiceIdentifier()).isEqualTo(monitoredServiceIdentifier);
     assertThat(cvConfig.getProductName()).isEqualTo(feature);
     assertThat(cvConfig.getMonitoringSourceName()).isEqualTo(healthSourceName);
     assertThat(cvConfig.getConnectorIdentifier()).isEqualTo(connectorIdentifier);

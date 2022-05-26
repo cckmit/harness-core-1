@@ -14,6 +14,7 @@ import static com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL;
 import io.harness.annotations.dev.OwnedBy;
 import io.harness.data.validator.EntityIdentifier;
 import io.harness.data.validator.EntityName;
+import io.harness.ng.core.infrastructure.InfrastructureType;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -33,11 +34,13 @@ public class InfrastructureRequestDTO {
   @EntityIdentifier @Schema(description = "identifier of the infrastructure") String identifier;
   @Schema(description = "organisation identifier of the infrastructure") String orgIdentifier;
   @Schema(description = "project identifier of the infrastructure") String projectIdentifier;
-  @Schema(description = "environment identifier of the infrastructure") String envIdentifier;
+  @Schema(description = "environment reference of the infrastructure") String environmentRef;
 
   @EntityName @Schema(description = "name of the infrastructure") String name;
   @Schema(description = "description of the infrastructure") String description;
   @Schema(description = "tags associated with the infrastructure") Map<String, String> tags;
+
+  @Schema(description = "type of the infrastructure") InfrastructureType type;
 
   @Schema(description = "yaml spec of the infrastructure") String yaml;
 }

@@ -21,12 +21,12 @@ import io.harness.cdng.infra.beans.InfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sDirectInfrastructureOutcome;
 import io.harness.cdng.infra.beans.K8sGcpInfrastructureOutcome;
 import io.harness.cdng.infra.yaml.Infrastructure;
-import io.harness.cdng.infra.yaml.InfrastructureKind;
 import io.harness.cdng.infra.yaml.K8SDirectInfrastructure;
 import io.harness.cdng.infra.yaml.K8sAzureInfrastructure;
 import io.harness.cdng.infra.yaml.K8sGcpInfrastructure;
 import io.harness.cdng.infra.yaml.PdcInfrastructure;
 import io.harness.cdng.infra.yaml.ServerlessAwsLambdaInfrastructure;
+import io.harness.cdng.infra.yaml.SshWinRmAzureInfrastructure;
 import io.harness.cdng.k8s.K8sStepHelper;
 import io.harness.cdng.service.steps.ServiceStepOutcome;
 import io.harness.cdng.stepsdependency.constants.OutcomeExpressionConstants;
@@ -53,6 +53,7 @@ import io.harness.logstreaming.LogStreamingStepClientFactory;
 import io.harness.logstreaming.NGLogCallback;
 import io.harness.ng.core.NGAccess;
 import io.harness.ng.core.environment.services.EnvironmentService;
+import io.harness.ng.core.infrastructure.InfrastructureKind;
 import io.harness.pms.contracts.ambiance.Ambiance;
 import io.harness.pms.contracts.execution.Status;
 import io.harness.pms.contracts.plan.ExecutionPrincipalInfo;
@@ -171,17 +172,17 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
 
     if (InfrastructureKind.KUBERNETES_GCP.equals(infrastructure.getKind())) {
       if (!(connectorInfo.getConnectorConfig() instanceof GcpConnectorDTO)) {
-        throw new InvalidRequestException(String.format(
-            "Invalid connector type [%s] for identifier: [%s], expected [%s]", connectorInfo.getConnectorType().name(),
-            infrastructure.getConnectorReference().getValue(), ConnectorType.GCP.name()));
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.GCP.name()));
       }
     }
 
     if (InfrastructureKind.SERVERLESS_AWS_LAMBDA.equals(infrastructure.getKind())) {
       if (!(connectorInfo.getConnectorConfig() instanceof AwsConnectorDTO)) {
-        throw new InvalidRequestException(String.format(
-            "Invalid connector type [%s] for identifier: [%s], expected [%s]", connectorInfo.getConnectorType().name(),
-            infrastructure.getConnectorReference().getValue(), ConnectorType.AWS.name()));
+        throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+            connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+            ConnectorType.AWS.name()));
       }
 
       AwsConnectorDTO awsConnector = (AwsConnectorDTO) connectorInfo.getConnectorConfig();
@@ -192,6 +193,13 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
     }
 
     if (InfrastructureKind.KUBERNETES_AZURE.equals(infrastructure.getKind())
+        && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
+      throw new InvalidRequestException(format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
+          connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
+          ConnectorType.AZURE.name()));
+    }
+
+    if (InfrastructureKind.SSH_WINRM_AZURE.equals(infrastructure.getKind())
         && !(connectorInfo.getConnectorConfig() instanceof AzureConnectorDTO)) {
       throw new InvalidRequestException(String.format("Invalid connector type [%s] for identifier: [%s], expected [%s]",
           connectorInfo.getConnectorType().name(), infrastructure.getConnectorReference().getValue(),
@@ -211,7 +219,7 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         connectorService.get(connectorIdentifierRef.getAccountIdentifier(), connectorIdentifierRef.getOrgIdentifier(),
             connectorIdentifierRef.getProjectIdentifier(), connectorIdentifierRef.getIdentifier());
     if (!connectorDTO.isPresent()) {
-      throw new InvalidRequestException(String.format("Connector not found for identifier : [%s]", connectorRefValue));
+      throw new InvalidRequestException(format("Connector not found for identifier : [%s]", connectorRefValue));
     }
     ConnectorUtils.checkForConnectorValidityOrThrow(connectorDTO.get());
 
@@ -246,6 +254,13 @@ public class InfrastructureStep implements SyncExecutableWithRbac<Infrastructure
         validateExpression(k8sAzureInfrastructure.getConnectorRef(), k8sAzureInfrastructure.getNamespace(),
             k8sAzureInfrastructure.getCluster(), k8sAzureInfrastructure.getSubscriptionId(),
             k8sAzureInfrastructure.getResourceGroup());
+        break;
+
+      case InfrastructureKind.SSH_WINRM_AZURE:
+        SshWinRmAzureInfrastructure sshWinRmAzureInfrastructure = (SshWinRmAzureInfrastructure) infrastructure;
+        validateExpression(sshWinRmAzureInfrastructure.getConnectorRef(),
+            sshWinRmAzureInfrastructure.getSubscriptionId(), sshWinRmAzureInfrastructure.getResourceGroup(),
+            sshWinRmAzureInfrastructure.getCredentialsRef());
         break;
 
       case InfrastructureKind.PDC:

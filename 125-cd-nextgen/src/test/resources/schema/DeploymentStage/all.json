@@ -660,6 +660,414 @@
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "CloudformationCreateStackStepConfiguration": {
+      "type": "object",
+      "required": [
+        "connectorRef",
+        "region",
+        "stackName",
+        "templateFile"
+      ],
+      "properties": {
+        "capabilities": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "connectorRef": {
+          "type": "string"
+        },
+        "parameterOverrides": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/definitions/NumberNGVariable"
+              },
+              {
+                "$ref": "#/definitions/SecretNGVariable"
+              },
+              {
+                "$ref": "#/definitions/StringNGVariable"
+              }
+            ]
+          }
+        },
+        "parameters": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CloudformationParametersFileSpec"
+          }
+        },
+        "region": {
+          "type": "string"
+        },
+        "roleArn": {
+          "type": "string"
+        },
+        "skipOnStackStatuses": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            {
+              "type": "string"
+            }
+          ]
+        },
+        "stackName": {
+          "type": "string"
+        },
+        "tags": {
+          "$ref": "#/definitions/CloudformationTags"
+        },
+        "templateFile": {
+          "$ref": "#/definitions/CloudformationTemplateFile"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudformationCreateStackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration",
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/CloudformationCreateStackStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudformationDeleteStackStepConfiguration": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inherited"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InheritedCloudformationDeleteStackStepConfiguration"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InlineCloudformationDeleteStackStepConfiguration"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CloudformationDeleteStackStepConfigurationSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudformationDeleteStackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/CloudformationDeleteStackStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudformationParametersFileSpec": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "store"
+      ],
+      "properties": {
+        "identifier": {
+          "type": "string"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudformationRollbackStepConfiguration": {
+      "type": "object",
+      "required": [
+        "provisionerIdentifier"
+      ],
+      "properties": {
+        "provisionerIdentifier": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudformationRollbackStepInfo": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StepSpecType"
+        },
+        {
+          "type": "object",
+          "required": [
+            "configuration"
+          ],
+          "properties": {
+            "configuration": {
+              "$ref": "#/definitions/CloudformationRollbackStepConfiguration"
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "metadata": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudformationTags": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InlineCloudformationTagsFileSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RemoteCloudformationTagsFileSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CloudformationTagsFileSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "CloudformationTemplateFile": {
+      "type": "object",
+      "required": [
+        "spec",
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InlineCloudformationTemplateFileSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Remote"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/RemoteCloudformationTemplateFileSpec"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "S3URL"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/S3UrlCloudformationTemplateFileSpec"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CloudformationTemplateFileSpec": {
+      "type": "object",
+      "discriminator": "type",
+      "properties": {
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "Condition": {
       "type": "object",
       "required": [
@@ -682,6 +1090,96 @@
         "value": {
           "type": "string",
           "minLength": 1
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ConfigFile": {
+      "type": "object",
+      "required": [
+        "identifier",
+        "spec"
+      ],
+      "properties": {
+        "identifier": {
+          "type": "string"
+        },
+        "spec": {
+          "$ref": "#/definitions/ConfigFileAttributes"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ConfigFileAttributeStepParameters": {
+      "type": "object",
+      "properties": {
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapperParameters"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "LocalFile",
+            "Encrypted",
+            "Remote"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ConfigFileAttributes": {
+      "type": "object",
+      "required": [
+        "store",
+        "type"
+      ],
+      "properties": {
+        "configFileAttributeStepParameters": {
+          "$ref": "#/definitions/ConfigFileAttributeStepParameters"
+        },
+        "store": {
+          "$ref": "#/definitions/StoreConfigWrapper"
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "LocalFile",
+            "Encrypted",
+            "Remote"
+          ]
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ConfigFileOverrideSetWrapper": {
+      "type": "object",
+      "properties": {
+        "overrideSet": {
+          "$ref": "#/definitions/ConfigFileOverrideSets"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ConfigFileOverrideSets": {
+      "type": "object",
+      "properties": {
+        "configFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConfigFileWrapper"
+          }
+        },
+        "identifier": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "ConfigFileWrapper": {
+      "type": "object",
+      "properties": {
+        "configFile": {
+          "$ref": "#/definitions/ConfigFile"
         }
       },
       "$schema": "http://json-schema.org/draft-07/schema#"
@@ -1733,6 +2231,40 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "HarnessStore": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "filePath",
+            "fileReference",
+            "fileType"
+          ],
+          "properties": {
+            "filePath": {
+              "type": "string",
+              "minLength": 1
+            },
+            "fileReference": {
+              "type": "string",
+              "minLength": 1
+            },
+            "fileType": {
+              "type": "string",
+              "description": "io.harness.cdng.manifest.yaml.harness.HarnessFileType",
+              "enum": [
+                "FileStore",
+                "Encrypted"
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "HelmChartManifest": {
       "allOf": [
         {
@@ -1776,6 +2308,21 @@
             },
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            },
+            "valuesPaths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -2049,6 +2596,7 @@
             "KubernetesGcp",
             "KubernetesAzure",
             "Pdc",
+            "SshWinRmAzure",
             "ServerlessAwsLambda"
           ]
         }
@@ -2134,8 +2682,158 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "SshWinRmAzure"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/SshWinRmAzureInfrastructure"
+              }
+            }
+          }
         }
       ]
+    },
+    "InheritFromManifestStoreConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "paths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "InheritedCloudformationDeleteStackStepConfiguration": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CloudformationDeleteStackStepConfigurationSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "provisionerIdentifier"
+          ],
+          "properties": {
+            "provisionerIdentifier": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "InlineCloudformationDeleteStackStepConfiguration": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CloudformationDeleteStackStepConfigurationSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "region",
+            "stackName"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "roleArn": {
+              "type": "string"
+            },
+            "stackName": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "InlineCloudformationTagsFileSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CloudformationTagsFileSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "content"
+          ],
+          "properties": {
+            "content": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "InlineCloudformationTemplateFileSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CloudformationTemplateFileSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "templateBody"
+          ],
+          "properties": {
+            "templateBody": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "InlineStoreConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "content"
+          ],
+          "properties": {
+            "content": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "InlineTerraformBackendConfigSpec": {
       "allOf": [
@@ -2480,6 +3178,12 @@
                 }
               ]
             },
+            "overrides": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ManifestConfigWrapper"
+              }
+            },
             "skipDryRun": {
               "oneOf": [
                 {
@@ -2793,6 +3497,21 @@
             },
             "store": {
               "$ref": "#/definitions/StoreConfigWrapper"
+            },
+            "valuesPaths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -2988,6 +3707,21 @@
           "properties": {
             "metadata": {
               "type": "string"
+            },
+            "patchesPaths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             },
             "pluginPath": {
               "type": "string"
@@ -3637,6 +4371,21 @@
             "metadata": {
               "type": "string"
             },
+            "paramsPaths": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
             "skipResourceVersioning": {
               "oneOf": [
                 {
@@ -4264,6 +5013,44 @@
         }
       ]
     },
+    "RemoteCloudformationTagsFileSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CloudformationTagsFileSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "store"
+          ],
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "RemoteCloudformationTemplateFileSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CloudformationTemplateFileSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "store"
+          ],
+          "properties": {
+            "store": {
+              "$ref": "#/definitions/StoreConfigWrapper"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "RemoteTerraformVarFileSpec": {
       "allOf": [
         {
@@ -4496,6 +5283,67 @@
             },
             "region": {
               "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "S3UrlCloudformationTemplateFileSpec": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CloudformationTemplateFileSpec"
+        },
+        {
+          "type": "object",
+          "required": [
+            "templateUrl"
+          ],
+          "properties": {
+            "templateUrl": {
+              "type": "string"
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "S3UrlStoreConfig": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "region",
+            "urls"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "string"
+            },
+            "region": {
+              "type": "string"
+            },
+            "urls": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
             }
           }
         }
@@ -5019,6 +5867,12 @@
       "properties": {
         "artifacts": {
           "$ref": "#/definitions/ArtifactListConfig"
+        },
+        "configFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConfigFileWrapper"
+          }
         },
         "manifests": {
           "type": "array",
@@ -5559,11 +6413,94 @@
       ],
       "$schema": "http://json-schema.org/draft-07/schema#"
     },
+    "SshWinRmAzureInfrastructure": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/Infrastructure"
+        },
+        {
+          "type": "object",
+          "required": [
+            "connectorRef",
+            "credentialsRef",
+            "resourceGroup",
+            "subscriptionId"
+          ],
+          "properties": {
+            "connectorRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "credentialsRef": {
+              "type": "string",
+              "minLength": 1
+            },
+            "delegateSelectors": {
+              "oneOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "resourceGroup": {
+              "type": "string",
+              "minLength": 1
+            },
+            "subscriptionId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "tags": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            },
+            "usePublicDns": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^<\\+input>(\\.(allowedValues|regex)\\(.+?\\))*$",
+                  "minLength": 1
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
     "StageOverridesConfig": {
       "type": "object",
       "properties": {
         "artifacts": {
           "$ref": "#/definitions/ArtifactListConfig"
+        },
+        "configFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ConfigFileWrapper"
+          }
         },
         "manifests": {
           "type": "array",
@@ -5682,6 +6619,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/BarrierStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CreateStack"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CloudformationCreateStackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "DeleteStack"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CloudformationDeleteStackStepInfo"
               }
             }
           }
@@ -5978,6 +6947,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "RollbackStack"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/CloudformationRollbackStepInfo"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "ServerlessAwsLambdaDeploy"
               }
             }
@@ -6258,7 +7243,11 @@
             "Http",
             "S3",
             "Gcs",
-            "Artifactory"
+            "Inline",
+            "Artifactory",
+            "S3Url",
+            "InheritFromManifest",
+            "Harness"
           ]
         }
       },
@@ -6364,6 +7353,22 @@
           "if": {
             "properties": {
               "type": {
+                "const": "Harness"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/HarnessStore"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
                 "const": "Http"
               }
             }
@@ -6372,6 +7377,38 @@
             "properties": {
               "spec": {
                 "$ref": "#/definitions/HttpStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "InheritFromManifest"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InheritFromManifestStoreConfig"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "Inline"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/InlineStoreConfig"
               }
             }
           }
@@ -6391,8 +7428,36 @@
               }
             }
           }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "S3Url"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "spec": {
+                "$ref": "#/definitions/S3UrlStoreConfig"
+              }
+            }
+          }
         }
       ]
+    },
+    "StoreConfigWrapperParameters": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/StoreConfig"
+        },
+        "type": {
+          "type": "string"
+        }
+      },
+      "$schema": "http://json-schema.org/draft-07/schema#"
     },
     "StringNGVariable": {
       "allOf": [
@@ -6973,6 +8038,12 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/ArtifactOverrideSetWrapper"
+              }
+            },
+            "configFileOverrideSets": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ConfigFileOverrideSetWrapper"
               }
             },
             "manifestOverrideSets": {
