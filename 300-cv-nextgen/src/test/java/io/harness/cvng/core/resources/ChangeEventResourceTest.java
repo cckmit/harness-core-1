@@ -371,7 +371,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(200);
     String jsonResponse = response.readEntity(String.class);
     assertThat(jsonResponse).contains("\"name\":\"K8 Activity\"");
-    assertThat(jsonResponse).contains("\"dependentMonitoredServices\":[\"dependent_service\"]");
+    assertThat(jsonResponse).contains("\"dependentMonitoredService\":\"dependent_service\"");
   }
 
   @Test
@@ -421,7 +421,7 @@ public class ChangeEventResourceTest extends CvNextGenTestBase {
     assertThat(response.getStatus()).isEqualTo(200);
     String jsonResponse = response.readEntity(String.class);
     assertThat(jsonResponse).contains("\"name\":\"K8 Activity\"");
-    assertThat(jsonResponse).contains("\"dependentMonitoredServices\":[]");
+    assertThat(jsonResponse).contains("\"dependentMonitoredService\":");
   }
 
   private String getChangeEventPath(ProjectParams projectParams) {

@@ -8,8 +8,6 @@
 package io.harness.cvng.beans.change;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.time.Instant;
-import java.util.Collections;
-import java.util.List;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,16 +31,9 @@ public class KubernetesChangeEventMetadata extends ChangeEventMetadata {
   String reason;
   String message;
   String resourceVersion;
-  List<String> dependentMonitoredServices;
+  String dependentMonitoredService;
   public enum Action { Add, Update, Delete }
   public enum KubernetesResourceType { Deployment, ReplicaSet, Secret, Pod, ConfigMap, StatefulSet }
-
-  public List<String> getDependentMonitoredServices() {
-    if (dependentMonitoredServices == null) {
-      return Collections.emptyList();
-    }
-    return dependentMonitoredServices;
-  }
 
   @Override
   public ChangeSourceType getType() {

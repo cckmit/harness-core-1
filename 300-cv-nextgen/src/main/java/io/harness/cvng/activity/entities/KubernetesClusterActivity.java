@@ -126,7 +126,7 @@ public class KubernetesClusterActivity extends Activity {
     }
   }
 
-  public List<String> getRelatedAppServiceIdentifiers() {
+  public List<String> getRealatedAppMonitoredServiceIdentifiers() {
     if (relatedAppServices == null) {
       return Collections.emptyList();
     }

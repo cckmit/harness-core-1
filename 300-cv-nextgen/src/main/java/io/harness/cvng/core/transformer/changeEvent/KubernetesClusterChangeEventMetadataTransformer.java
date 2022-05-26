@@ -8,12 +8,11 @@
 package io.harness.cvng.core.transformer.changeEvent;
 
 import io.harness.cvng.activity.entities.KubernetesClusterActivity;
-import io.harness.cvng.activity.entities.KubernetesClusterActivity.RelatedAppMonitoredService;
 import io.harness.cvng.beans.change.ChangeEventDTO;
 import io.harness.cvng.beans.change.KubernetesChangeEventMetadata;
 
 import java.time.Instant;
-import java.util.stream.Collectors;
+import java.util.List;
 
 public class KubernetesClusterChangeEventMetadataTransformer
     extends ChangeEventMetaDataTransformer<KubernetesClusterActivity, KubernetesChangeEventMetadata> {
@@ -38,18 +37,12 @@ public class KubernetesClusterChangeEventMetadataTransformer
         .namespace(metadata.getNamespace())
         .workload(metadata.getWorkload())
         .activityStartTime(metadata.getTimestamp())
-        .relatedAppServices(metadata.getDependentMonitoredServices()
-                                .stream()
-                                .map(dependentMonitoredServices
-                                    -> RelatedAppMonitoredService.builder()
-                                           .monitoredServiceIdentifier(dependentMonitoredServices)
-                                           .build())
-                                .collect(Collectors.toList()))
         .build();
   }
 
   @Override
   protected KubernetesChangeEventMetadata getMetadata(KubernetesClusterActivity activity) {
+    List<String> dependentMonitoredServiceIdentifiers = activity.getRealatedAppMonitoredServiceIdentifiers();
     return KubernetesChangeEventMetadata.builder()
         .oldYaml(activity.getOldYaml())
         .newYaml(activity.getNewYaml())
@@ -61,7 +54,8 @@ public class KubernetesClusterChangeEventMetadataTransformer
         .workload(activity.getWorkload())
         .timestamp(activity.getEventTime())
         .resourceVersion(activity.getResourceVersion())
-        .dependentMonitoredServices(activity.getRelatedAppServiceIdentifiers())
+        .dependentMonitoredService(
+            !dependentMonitoredServiceIdentifiers.isEmpty() ? dependentMonitoredServiceIdentifiers.get(0) : null)
         .build();
   }
 }
