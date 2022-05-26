@@ -190,7 +190,7 @@ public class ConnectorEntityCRUDStreamListener implements MessageListener {
         gcpEntityChangeEventService.processGCPEntityDeleteEvent(entityChangeDTO);
         break;
       default:
-        log.error("GCP Entity Change Event of type %s, not handled", action);
+        log.error("GCP Entity Change Event of type {}, not handled", action);
     }
     return true;
   }

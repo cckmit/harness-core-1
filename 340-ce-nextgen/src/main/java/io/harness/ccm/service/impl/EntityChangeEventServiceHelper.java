@@ -24,8 +24,8 @@ import java.util.concurrent.TimeUnit;
 import lombok.experimental.UtilityClass;
 import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
 @UtilityClass
+@Slf4j
 @OwnedBy(HarnessTeam.CE)
 public class EntityChangeEventServiceHelper {
   public void publishMessage(ArrayList<ImmutableMap<String, String>> entityChangeEvents, String harnessGcpProjectId,
